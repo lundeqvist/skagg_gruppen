@@ -1,10 +1,14 @@
-package gui;
+package images;
 
+
+
+import games.GameControl;
+import games.GameControl;
 import utils.Utils;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
-import theGame.*;
+
 
 @SuppressWarnings("serial")
 public class GameMenu extends JFrame
@@ -42,28 +46,28 @@ public class GameMenu extends JFrame
 		getContentPane().add(mainPanel);
 		mainPanel.setLayout(null);
 		
-		ImageIcon iconGames = new ImageIcon(getClass().getResource("images/games.gif"));
+		ImageIcon iconGames = new ImageIcon(getClass().getResource("games.gif"));
 		gameButton = new JButton("Games",iconGames);
 		gameButton.setBounds(10,10,128,128);
 		gameButton.addActionListener(new ButtonListener());
 		
 		mainPanel.add(gameButton);
 		
-		ImageIcon iconBomber = new ImageIcon(getClass().getResource("images/bomberman.png"));
+		ImageIcon iconBomber = new ImageIcon(getClass().getResource("bomberman.png"));
 		gameButton = new JButton(iconBomber);
 		gameButton.setBounds(148,10,128,128);
 		gameButton.addActionListener(new ButtonListener());
 		
 		mainPanel.add(gameButton);
 		
-		ImageIcon iconChess = new ImageIcon(getClass().getResource("images/chess.png"));
+		ImageIcon iconChess = new ImageIcon(getClass().getResource("chess.png"));
 		gameButton = new JButton(iconChess);
 		gameButton.setBounds(10,148,128,128);
 		gameButton.addActionListener(new ButtonListener());
 		
 		mainPanel.add(gameButton);
 		
-		ImageIcon iconTroll = new ImageIcon(getClass().getResource("images/troll.png"));
+		ImageIcon iconTroll = new ImageIcon(getClass().getResource("troll.png"));
 		gameButton = new JButton(iconTroll);
 		gameButton.setBounds(148,148,128,128);
 		gameButton.addActionListener(new ButtonListener());

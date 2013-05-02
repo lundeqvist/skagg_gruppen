@@ -3,8 +3,8 @@ package utils;
 import java.text.DateFormat;
 import java.util.Date;
 import javax.swing.*;
-import projekt.Client;
-import projekt.Converter;
+import communication.Client;
+import communication.Converter;
 
 public class Utils {
     static Client client = new Client();
@@ -17,8 +17,8 @@ public class Utils {
             DateFormat df = DateFormat.getTimeInstance(DateFormat.SHORT);
             Date date = new Date();
             String newOutput = " [" + df.format(date) + "]: " + input + "\n";
-            converter.send_message(2, "erlang", "comunication", newOutput);
-            String temp = converter.receive_message("erlangcomunication");  
+            converter.send_message(2, "playerName", "chattId", newOutput);           
+            String temp = converter.receive_message("chattId");  
             chatOutput.setText(currentOutput + "\n" + temp);
             chatInput.setText("");
         }
