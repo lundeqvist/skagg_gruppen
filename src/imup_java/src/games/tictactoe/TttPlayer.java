@@ -1,4 +1,4 @@
-package theGame;
+package games.tictactoe;
 
 import player.Player;
 
