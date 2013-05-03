@@ -6,11 +6,10 @@ pong(Lists) ->
         stop ->
             io:format("Pong finished...~n",[]);         
         
- 	{StartCommunicationWithJavaId,ID,Spel,ping} ->           
-	    NewList = lists:append(Lists, [{{ID,Spel},StartCommunicationWithJavaId}]),
-	    %%NewList = lists:append(Lists, [StartCommunicationWithJavaId]),
+ 	{StartCommunicationWithJavaId,ID,GameID,ping} ->           
+	    NewList = append({PlayerID, GameID}, StartCommunicationWithJavaId, Lists),
 	    io:format("Ping~n",[]),
-            StartCommunicationWithJavaId ! {self(),pong},
+            StartCommunicationWithJavaId ! {self(),pong},    %% 
 	    pong(NewList);
 
 	%%Detta kommer från "servern"
@@ -18,29 +17,35 @@ pong(Lists) ->
 	    [MailBox ! {self(), NewPosition}|| {Tupeln, MailBox} <- Lists, Tupeln =:= Skruffs],
 	    pong(Lists);
 
-	{b, ID, Spel, Message} ->	   
-	    List = [MailBox || {Tupeln, MailBox} <- Lists, Tupeln =:= {ID, Spel}],
-	    io:format(Message,[]),
-	    %%[{Tuple, MailBox}|_] = Lists,	    
-	    [A] = List,
-	    A ! {self(), Message},
+	{b, PlayerID, GameID, Message} ->	   
+	    Recipient = find({PlayerID, GameID}, Lists),
+	    Recipient ! {self(), Message},
 	    pong(Lists);
 
-	 
-	{MailBox,1,Skruffs,NewPosition} ->
-	    self() ! {a,Skruffs,NewPosition};  
+	{MailBox, "send_moveRequest",{PlayerID, GameID}, newPosition} ->
+		self() ! {send_host, GameID, {a, PlayerID, GameID, newPosition}};
+		
+	{Mailbox, "send_chatLine",{PlayerID, GameID}, chatLine} ->
+		self() ! {send_all, GameID, {b, PlayerID, GameID}, chatLine};
+		
+	
+		
+		
+	
+%%	{MailBox,1,Skruffs,NewPosition} ->
+%%	    self() ! {};  
 
-	{MailBox, 2, {ID, SpelId},Message} ->
-	    self() ! {b, ID, SpelId, Message},
+	{MailBox, 2, {PlayerID, GameId},Message} ->
+	    self() ! {b, PlayerID, GameId, Message},
 	    pong(Lists);
 	
 	
 	
-	%%{1, {ID, gameID}, move/newPosition}
-	%%{2, {ID, gameID}, chatMessage}
-	%%{3, ID, startGame, co-player} 
-	%%{4, ID, sendInvite, invited}
-	%%{5, ID, inviteID, accept/dont accept}
+	%%{1, {PlayerID, gameID}, move/newPosition}
+	%%{2, {PlayerID, gameID}, chatMessage}
+	%%{3, PlayerID, startGame, co-player} 
+	%%{4, PlayerID, sendInvite, invited}
+	%%{5, PlayerID, inviteID, accept/dont accept}
 	
 	%%{6, ID, enter} -> när man loggar in.
 	_ ->

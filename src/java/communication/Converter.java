@@ -1,4 +1,4 @@
-package projekt;
+package communication;
 
 import java.io.IOException;
 import com.ericsson.otp.erlang.*;
@@ -18,7 +18,8 @@ public class Converter {
     static String server = "server";
     Client client = new Client();
     HashMap<String, OtpMbox> mailboxes = new HashMap<String, OtpMbox>();
-
+    
+    
     public void startup_communication(String id) {
         OtpNode self = null;
         OtpMbox mbox = null;
@@ -37,21 +38,54 @@ public class Converter {
         }
     }
 
-    public void send_message(String id, String spel, String message) {
-        if (!mailboxes.containsKey(id + spel)) {        
-            startup_communication(id + spel);
+    public void send_messagePing(String id, String gameID) {
+        if (!mailboxes.containsKey(gameID)) {        
+            startup_communication(gameID);
         }
                  
         OtpErlangObject[] msg = new OtpErlangObject[4];
-        msg[0] = mailboxes.get(id + spel).self();
+        msg[0] = mailboxes.get(gameID).self();
         msg[1] = new OtpErlangAtom(id);
-        msg[2] = new OtpErlangAtom(spel);        
-        msg[3] = new OtpErlangAtom(message);
+        msg[2] = new OtpErlangAtom(gameID);        
+        msg[3] = new OtpErlangAtom("ping");
         OtpErlangTuple tuple = new OtpErlangTuple(msg);
-        mailboxes.get(id + spel).send("pong", server, tuple);                        
-        receive_message(id + spel);
+        mailboxes.get(gameID).send("pong", server, tuple);                        
+        receive_message(gameID);
     }
 
+    
+    
+    
+    
+    public void send_moveRequest(String playerID, String gameID, String newPositionRequest){
+
+        OtpErlangObject[] id = new OtpErlangObject[2];
+        id[0] = new OtpErlangAtom(playerID);
+        id[1] = new OtpErlangAtom(gameID);
+        String send_moveRequest = "send_moveRequest"; 
+        OtpErlangObject[] msg = new OtpErlangObject[4];
+        msg[0] = mailboxes.get(gameID).self();
+        msg[1] = new OtpErlangAtom(send_moveRequest);
+        msg[2] = new OtpErlangTuple(id);
+        msg[3] = new OtpErlangAtom(newPositionRequest);
+        OtpErlangTuple tuple = new OtpErlangTuple(msg);
+        mailboxes.get(gameID).send("host", server, tuple); 
+    }
+    
+    public void send_chatLine(String playerID, String gameID, String chatLine){
+        OtpErlangObject[] id = new OtpErlangObject[2];
+        id[0] = new OtpErlangAtom(playerID);
+        id[1] = new OtpErlangAtom(gameID);
+        String send_chatLine = "send_chatLine"; 
+        OtpErlangObject[] msg = new OtpErlangObject[4];
+        msg[0] = mailboxes.get(gameID).self();
+        msg[1] = new OtpErlangAtom(send_chatLine);
+        msg[2] = new OtpErlangTuple(id);
+        msg[3] = new OtpErlangAtom(chatLine);
+        OtpErlangTuple tuple = new OtpErlangTuple(msg);
+        mailboxes.get(gameID).send("host", server, tuple);
+    }
+    
     /**
      *
      * @param num
@@ -59,24 +93,24 @@ public class Converter {
      * @param spelid
      * @param message
      */
-    public void send_message(int num, String personId, String spelid, String message) {
-        if (!mailboxes.containsKey(personId + spelid)) {
-            startup_communication(personId + spelid);
-            send_message(personId, spelid, "ping");
-        }
-        OtpErlangObject[] id = new OtpErlangObject[2];
-        id[0] = new OtpErlangAtom(personId);
-        id[1] = new OtpErlangAtom(spelid);
-        
-        OtpErlangObject[] msg = new OtpErlangObject[4];
-        msg[0] = mailboxes.get(personId + spelid).self();
-        msg[1] = new OtpErlangInt(num);
-        msg[2] = new OtpErlangTuple(id);
-        msg[3] = new OtpErlangAtom(message);
-        OtpErlangTuple tuple = new OtpErlangTuple(msg);
-        mailboxes.get(personId + spelid).send("pong", server, tuple);
-        
-    }
+   /** public void send_message(int num, String personId, String spelid, String message) {
+    *    if (!mailboxes.containsKey(spelid)) {
+    *       startup_communication(spelid);
+    *      send_message(personId, spelid, "ping");
+    *    }
+    *    OtpErlangObject[] id = new OtpErlangObject[2];
+    *    id[0] = new OtpErlangAtom(personId);
+    *    id[1] = new OtpErlangAtom(spelid);
+    *    
+    *    OtpErlangObject[] msg = new OtpErlangObject[4];
+    *    msg[0] = mailboxes.get(spelid).self();
+    *    msg[1] = new OtpErlangInt(num);
+    *    msg[2] = new OtpErlangTuple(id);
+    *    msg[3] = new OtpErlangAtom(message);
+    *   OtpErlangTuple tuple = new OtpErlangTuple(msg);
+    *    mailboxes.get(spelid).send("pong", server, tuple);
+    *    
+    * }  */
 
     public String receive_message(String id) {
         String message = "";
