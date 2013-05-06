@@ -1,4 +1,4 @@
-package games.tictactoe;
+package games.tictactoeHost;
 
 import javax.swing.*;
 
@@ -6,6 +6,7 @@ public class GameControl {
 
     private TicTacToe game;
     private int gameRows, gameCols;
+    private String gameID;
     private JButton[][] buttonGrid;
     private TttPlayer x, o;
 
@@ -19,6 +20,10 @@ public class GameControl {
         game.run();
     }
 
+    public String getGameID() {
+        return this.gameID;
+    }
+    
     public TttPlayer getPlayerX() {
         return this.x;
     }

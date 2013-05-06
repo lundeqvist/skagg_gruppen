@@ -1,10 +1,10 @@
 package games;
 
+import games.tictactoeHost.GameControl;
 import utils.Utils;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
-import games.tictactoe.*;
 
 @SuppressWarnings("serial")
 public class GameMenu extends JFrame
