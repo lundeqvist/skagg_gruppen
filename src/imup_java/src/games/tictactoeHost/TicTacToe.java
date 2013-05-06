@@ -68,30 +68,39 @@ public class TicTacToe extends Game {
         // HÄMTA FÖRFRÅGAN FRÅN SERVER
         public void serverPerformed() {
             while (true) {
-                String playerType;
-                {gameID, playerID, newPosition} = receive_message();
-                {i,j} = newPosition;        
+                {gameID, playerID, newPosition} = receive_moveRequest();
+                {i,j} = newPosition;
                 
-                if (x.getName().equals(playerID)) {
-                    playerType = "X";
-                }
-                else {
-                    playerType = "O";
-                }
-                
-                        ((JButton) gameGrid[i][j]).setText(playerType);
-                        gc.winCheck(playerType, getTTT());
+                String playerType = (x.getName().equals(playerID) ? "X" : "O");
+                ((JButton) gameGrid[i][j]).setText(playerType);
+           
+                    
+                    
+                wincheck = receive_cmd();
+                switch (wincheck) {
+                case "-1":
+                    JOptionPane.showMessageDialog(null, "The board is full!");
+                    break;
+                case "0":
+                    break;
+                default:
+                    JOptionPane.showMessageDialog(null, wincheck + " wins the game!");
+                    break;
                 }
             }
-        }
-    }
+       }
+   }
+    
     
     private class ButtonListener implements ActionListener {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-        // SKICKA TILL SERVER
-        send_moveRequest(e.getActionCommand(), get_playerID(), getgameID());
+            // SKICKA TILL SERVER
+            if (!(((JButton) e.getSource()).getText().equals("X") || 
+                    ((JButton) e.getSource()).getText().equals("O"))) {
+                send_MoveReq(e.getActionCommand(), get_playerID(), get_gameID());
+            }
         }
     }
 }

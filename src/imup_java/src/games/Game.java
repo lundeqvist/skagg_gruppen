@@ -2,6 +2,7 @@ package games;
 
 import java.awt.GridLayout;
 import javax.swing.*;
+import player.*;
 
 @SuppressWarnings("serial")
 public abstract class Game extends JFrame
@@ -11,6 +12,9 @@ public abstract class Game extends JFrame
 	protected int gameRows, gameCols, frameWidth, frameHeight;
 	protected JButton[][] gameGrid;
 	protected JPanel mainPanel;
+        protected Player[] players;
+        
+        
 	
 	public Game(String name, String id, int rows, int cols, int width, int height)
 	{

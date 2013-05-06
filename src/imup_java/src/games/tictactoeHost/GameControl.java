@@ -40,74 +40,60 @@ public class GameControl {
         // HÄMTA FÖRFRÅGAN FRÅN SERVER
         public void serverPerformed() {
             while (true) {
-                String playerType;
-                {gameID, playerID, newPosition} = receive_message();
+                {gameID, playerID, newPosition} = receive_MoveReq();
                 {i,j} = newPosition;        
                 
-                if (x.getName().equals(playerID)) {
-                    playerType = "X";
-                }
-                else {
-                    playerType = "O";
-                }
-                
-                if (((counter % 2 == 0) && playerType.equals("O")) || ((counter % 2 != 0) && playerType.equals("X"))) {}
-              
-                switch (gameGrid[i][j].getText()) {
-                    case ("X"):
-                        break;
-                    case ("O"):
-                        break;
-                    default:
-                        //((JButton) gameGrid[i][j]).setText(playerType);
-                        // SKICKA setText till server
-                        // send_Message(playerType,i,j);
-                        winCheck(playerType);
-                        counter++;
-                        break;
-                }
+                String playerType = (x.getName().equals(playerID) ? "X" : "O");
+                if (((counter % 2 == 0) && playerType.equals("O")) 
+                        || ((counter % 2 != 0) && playerType.equals("X"))) {}
+             
+                // SKICKA setText till server
+                // send_Move(i+j, get_playerID(), get_gameID());
+                // send_cmd(winCheck(playerType), get_playerID(), get_gameID());
+                counter++;
             }
         }
     }
     
     
-    public void winCheck(String type) {
+    public String winCheck(String type) {
         for (int i = 1; i < gameRows - 1; i++) {
             for (int j = 1; j < gameCols - 1; j++) {
-                checkSurroundings(i, j, type);
+                return checkSurroundings(i, j, type);
             }
         }
+        return "0";
     }
 
-    private void checkSurroundings(int i, int j, String t) {
+    private String checkSurroundings(int i, int j, String t) {
         TttPlayer player = (t.equals("X") ? x : o);
         String type = player.getType();
         if (i == 1) {
             if (gameGrid[0][j - 1].getText().equals(type)
                     && gameGrid[0][j].getText().equals(type)
                     && gameGrid[0][j + 1].getText().equals(type)) {
-                announceWinner(player);
+                return player.getName();
             }
         }
         if (j == 1) {
             if (gameGrid[i - 1][0].getText().equals(type)
                     && gameGrid[i][0].getText().equals(type)
                     && gameGrid[i + 1][0].getText().equals(type)) {
-                announceWinner(player);
+                return player.getName();
             }
         }
         if (i == gameRows - 2) {
             if (gameGrid[gameRows - 1][j - 1].getText().equals(type)
                     && gameGrid[gameRows - 1][j].getText().equals(type)
                     && gameGrid[gameRows - 1][j + 1].getText().equals(type)) {
-                announceWinner(player);
+                return player.getName();
             }
         }
         if (j == gameCols - 2) {
             if (gameGrid[i - 1][gameCols - 1].getText().equals(type)
                     && gameGrid[i][gameCols - 1].getText().equals(type)
                     && gameGrid[i + 1][gameCols - 1].getText().equals(type)) {
-                announceWinner(player);
+                return player.getName();
             }
         }
 
@@ -115,48 +101,36 @@ public class GameControl {
         if (gameGrid[i][j - 1].getText().equals(type)
                 && gameGrid[i][j].getText().equals(type)
                 && gameGrid[i][j + 1].getText().equals(type)) {
-            announceWinner(player);
+                return player.getName();
         } //colcheck
         else if (gameGrid[i - 1][j].getText().equals(type)
                 && gameGrid[i][j].getText().equals(type)
                 && gameGrid[i + 1][j].getText().equals(type)) {
-            announceWinner(player);
+                return player.getName();
         } //right diagonalcheck
         else if (gameGrid[i - 1][j - 1].getText().equals(type)
                 && gameGrid[i][j].getText().equals(type)
                 && gameGrid[i + 1][j + 1].getText().equals(type)) {
-            announceWinner(player);
+                return player.getName();
         } else if (gameGrid[i - 1][j + 1].getText().equals(type)
                 && gameGrid[i][j].getText().equals(type)
                 && gameGrid[i + 1][j - 1].getText().equals(type)) {
-            announceWinner(player);
+                return player.getName();
         } else {
-            boardFull();
+            return boardFull();
         }
 
     }
 
-    private void announceWinner(TttPlayer player) {
-        JOptionPane.showMessageDialog(game, player.getName() + " wins the game!");
-        int ans = JOptionPane.showConfirmDialog(game, "Another round?", "Play again?", JOptionPane.YES_NO_OPTION);
-        if (ans == 0) {
-            game.reset();
-        } else {
-            game.dispose();
-        }
-    }
-
-    public void boardFull() {
+    public String boardFull() {
         for (int i = 0; i < gameRows; i++) {
             for (int j = 0; j < gameCols; j++) {
                 if (!(gameGrid[i][j].getText().equals(x.getType()) || gameGrid[i][j].getText().equals(o.getType()))) {
-                    return;
-                }
-                if (i == gameRows - 1 && j == gameCols - 1) {
-                    announceWinner(new TttPlayer("Noone", "Noone"));
+                    return "0";
                 }
             }
         }
+        return "-1";
     }
 
 }
