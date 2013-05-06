@@ -1,4 +1,4 @@
-package gui;
+package games;
 
 import utils.Utils;
 import games.tictactoe.*;
