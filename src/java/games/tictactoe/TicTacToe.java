@@ -1,52 +1,39 @@
-package theGame;
+package games.tictactoe;
 
-import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-
 import javax.swing.*;
 
+import games.game.*;
+
 @SuppressWarnings("serial")
-public class TicTacToe extends JFrame {
+public class TicTacToe extends Game {
 	
-	private JPanel panel;
-	private JButton[][] buttonGrid;
-	private int  gameRows, gameCols, counter;
+	private int counter;
 	private GameControl gc;
 	private TttPlayer x,o;
-	private TicTacToe ttt;
-	
-	public TicTacToe(GameControl gc)
-	{
-		new TicTacToe(3,3,gc);
-	}
 	
 	public TicTacToe(int rows, int cols, GameControl gc)
 	{
-		ttt = this;
+            super("TicTacToe","TTTno1",rows,cols,400,400);
 		counter = 0;
-		gameRows = rows;
-		gameCols = cols;
 		x = gc.getPlayerX();
 		o = gc.getPlayerO();
-		panel = new JPanel();
-		panel.setLayout(new GridLayout(gameRows,gameCols,1,1));
-		buttonGrid = new JButton[gameRows][gameCols];
-		for(int i=0;i<gameRows;i++)
-		{
-			for(int j=0;j<gameCols;j++)
-			{
-				buttonGrid[i][j] = new JButton();
-				buttonGrid[i][j].addActionListener(new ButtonListener());
-				panel.add(buttonGrid[i][j]);
-			}
-		}
-		add(panel);
-		setLocationRelativeTo(null);
-		setSize(400,400);
-		//setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		this.gc = gc;
+ 
+                for(int i = 0; i<gameRows; i++)
+                {
+                    for(int j = 0; j<gameCols; j++)
+                    {
+                        gameGrid[i][j].addActionListener(new ButtonListener());
+                        gameGrid[i][j].setActionCommand(""+i+j);
+                    }
+                }
 	}
+        private TicTacToe getTTT()
+        {
+            return this;
+        }
 	
 	public int getRows()
 	{
@@ -60,7 +47,7 @@ public class TicTacToe extends JFrame {
 	
 	public JButton[][] getGrid()
 	{
-		return this.buttonGrid;
+		return this.gameGrid;
 	}
 	
 	public void run()
@@ -74,12 +61,13 @@ public class TicTacToe extends JFrame {
 		{
 			for(int j = 0; j<gameCols; j++)
 			{
-				buttonGrid[i][j].setText("");
+				gameGrid[i][j].setText("");
 			}
 		}
 		counter = 0;
 	}
 	
+        @Override
 	public String toString()
 	{
 		String text = "";
@@ -87,7 +75,7 @@ public class TicTacToe extends JFrame {
 		{
 			for(int j = 0; j<gameCols; j++)
 			{
-				text = text + buttonGrid[i][j].getText();
+				text = text + gameGrid[i][j].getText();
 			}
 		}
 		return text;
@@ -111,12 +99,12 @@ public class TicTacToe extends JFrame {
 					if(counter % 2 == 0)
 					{
 						((JButton) e.getSource()).setText(x.getType());
-						gc.winCheck(x.getType(),ttt);
+						gc.winCheck(x.getType(),getTTT());
 					}
 					else
 					{
 						((JButton) e.getSource()).setText(o.getType());
-						gc.winCheck(o.getType(),ttt);	
+						gc.winCheck(o.getType(),getTTT());	
 					}
 					counter++;
 					break;

@@ -1,4 +1,4 @@
-package theGame;
+package games.tictactoe;
 
 import javax.swing.*;
 
@@ -144,4 +144,9 @@ public class GameControl {
 			}
 		}
 	}
+        
+        public static void main(String[] args)
+        {
+            GameControl gc = new GameControl("lol","rofl");
+        }
 }
