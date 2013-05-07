@@ -2,20 +2,20 @@ package player;
 
 public abstract class Player {
 
-	protected String name;
+	protected String playerID;
 	
-	public Player(String name)
+	public Player(String playerID)
 	{
-		this.name = name;
+		this.playerID = playerID;
 	}
 	
-	public String getName()
+	public String getPlayerID()
 	{
-		return this.name;
+		return this.playerID;
 	}
 	
-	public void setName(String name)
+	public void setPlayerID(String playerID)
 	{
-		this.name = name;
+		this.playerID = playerID;
 	}
 }

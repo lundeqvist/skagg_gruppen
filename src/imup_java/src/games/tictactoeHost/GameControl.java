@@ -10,11 +10,11 @@ public class GameControl {
     private JButton[][] gameGrid;
     private TttPlayer x, o;
 
-    public GameControl(String playerX, String playerO) {
+    public GameControl(TicTacToe TTTGame, TttPlayer x, TttPlayer o) {
         counter = 0;
-        x = new TttPlayer(playerX, "X");
-        o = new TttPlayer(playerO, "O");
-        game = new TicTacToe(3, 3, this);
+        this.x = x;
+        this.o = o;
+        game = TTTGame;
         gameRows = game.getRows();
         gameCols = game.getCols();
         gameGrid = game.getGrid();
@@ -40,17 +40,16 @@ public class GameControl {
         // HÄMTA FÖRFRÅGAN FRÅN SERVER
         public void serverPerformed() {
             while (true) {
-                {gameID, playerID, newPosition} = receive_MoveReq();
-                {i,j} = newPosition;        
+                {gameID, playerID, {newPosition, wincheck}} = receive_MoveReq();
+                {i,j} = newPosition;
                 
-                String playerType = (x.getName().equals(playerID) ? "X" : "O");
-                if (((counter % 2 == 0) && playerType.equals("O")) 
-                        || ((counter % 2 != 0) && playerType.equals("X"))) {}
-             
-                // SKICKA setText till server
-                // send_Move(i+j, get_playerID(), get_gameID());
-                // send_cmd(winCheck(playerType), get_playerID(), get_gameID());
-                counter++;
+                String playerType = (x.getPlayerID().equals(playerID) ? "X" : "O");
+                if (!((counter % 2 == 0) && playerType.equals("O")) 
+                        || ((counter % 2 != 0) && playerType.equals("X"))) {
+                    // SKICKA setText till server som ska skickas vidare till alla andra spelare
+                    // send_cmd(getGameID(), getPlayerID(), i+j, winCheck(playerType));
+                    counter++;
+                }
             }
         }
     }
@@ -72,28 +71,28 @@ public class GameControl {
             if (gameGrid[0][j - 1].getText().equals(type)
                     && gameGrid[0][j].getText().equals(type)
                     && gameGrid[0][j + 1].getText().equals(type)) {
-                return player.getName();
+                return player.getPlayerID();
             }
         }
         if (j == 1) {
             if (gameGrid[i - 1][0].getText().equals(type)
                     && gameGrid[i][0].getText().equals(type)
                     && gameGrid[i + 1][0].getText().equals(type)) {
-                return player.getName();
+                return player.getPlayerID();
             }
         }
         if (i == gameRows - 2) {
             if (gameGrid[gameRows - 1][j - 1].getText().equals(type)
                     && gameGrid[gameRows - 1][j].getText().equals(type)
                     && gameGrid[gameRows - 1][j + 1].getText().equals(type)) {
-                return player.getName();
+                return player.getPlayerID();
             }
         }
         if (j == gameCols - 2) {
             if (gameGrid[i - 1][gameCols - 1].getText().equals(type)
                     && gameGrid[i][gameCols - 1].getText().equals(type)
                     && gameGrid[i + 1][gameCols - 1].getText().equals(type)) {
-                return player.getName();
+                return player.getPlayerID();
             }
         }
 
@@ -101,21 +100,21 @@ public class GameControl {
         if (gameGrid[i][j - 1].getText().equals(type)
                 && gameGrid[i][j].getText().equals(type)
                 && gameGrid[i][j + 1].getText().equals(type)) {
-                return player.getName();
+                return player.getPlayerID();
         } //colcheck
         else if (gameGrid[i - 1][j].getText().equals(type)
                 && gameGrid[i][j].getText().equals(type)
                 && gameGrid[i + 1][j].getText().equals(type)) {
-                return player.getName();
+                return player.getPlayerID();
         } //right diagonalcheck
         else if (gameGrid[i - 1][j - 1].getText().equals(type)
                 && gameGrid[i][j].getText().equals(type)
                 && gameGrid[i + 1][j + 1].getText().equals(type)) {
-                return player.getName();
+                return player.getPlayerID();
         } else if (gameGrid[i - 1][j + 1].getText().equals(type)
                 && gameGrid[i][j].getText().equals(type)
                 && gameGrid[i + 1][j - 1].getText().equals(type)) {
-                return player.getName();
+                return player.getPlayerID();
         } else {
             return boardFull();
         }

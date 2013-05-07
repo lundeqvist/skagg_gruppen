@@ -14,12 +14,10 @@ public class TicTacToe extends Game {
     private TttPlayer x, o;
 
 
-    public TicTacToe(int rows, int cols, GameControl gc) {
-        super("TicTacToe", "GAMEID", rows, cols, 400, 400);
-        counter = 0;
-        x = gc.getPlayerX();
-        o = gc.getPlayerO();
-        this.gc = gc;
+    public TicTacToe(String player1, String player2, String gameID, GameControl gc) {
+        super("TicTacToe", gameID, 3, 3, 400, 400);
+        x = new TttPlayer(player1, "X");
+        o = new TttPlayer(player2, "O");
         
         for (int i = 0; i < gameRows; i++) {
             for (int j = 0; j < gameCols; j++) {
@@ -27,28 +25,19 @@ public class TicTacToe extends Game {
                 gameGrid[i][j].addActionListener(new ButtonListener());
             }
         }
+        gc = new GameControl(this, x, o);
     }
     
     public int getRows() {
-        return this.gameRows;
+        return gameRows;
     }
 
     public int getCols() {
-        return this.gameCols;
+        return gameCols;
     }
 
     public JButton[][] getGrid() {
-        return this.gameGrid;
-    }
-
-
-    public void reset() {
-        for (int i = 0; i < gameRows; i++) {
-            for (int j = 0; j < gameCols; j++) {
-                gameGrid[i][j].setText("");
-            }
-        }
-        counter = 0;
+        return gameGrid;
     }
 
     public String toString() {
@@ -60,23 +49,17 @@ public class TicTacToe extends Game {
         }
         return text;
     }
-
-    
-    
     
     private class ServerListener {
         // HÄMTA FÖRFRÅGAN FRÅN SERVER
         public void serverPerformed() {
             while (true) {
-                {gameID, playerID, newPosition} = receive_moveRequest();
+                {gameID, playerID, {newPosition, wincheck}} = receive_moveRequest();
                 {i,j} = newPosition;
                 
-                String playerType = (x.getName().equals(playerID) ? "X" : "O");
+                String playerType = (x.getPlayerID().equals(playerID) ? "X" : "O");
                 ((JButton) gameGrid[i][j]).setText(playerType);
-           
-                    
-                    
-                wincheck = receive_cmd();
+                
                 switch (wincheck) {
                 case "-1":
                     JOptionPane.showMessageDialog(null, "The board is full!");
@@ -99,7 +82,7 @@ public class TicTacToe extends Game {
             // SKICKA TILL SERVER
             if (!(((JButton) e.getSource()).getText().equals("X") || 
                     ((JButton) e.getSource()).getText().equals("O"))) {
-                send_MoveReq(e.getActionCommand(), get_playerID(), get_gameID());
+                send_MoveReq(e.getActionCommand(), x.getPlayerID(), getGameID());
             }
         }
     }
