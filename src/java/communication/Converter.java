@@ -53,6 +53,34 @@ public class Converter {
         receive_message(gameID);
     }
 
+    public void send_invite(String playerId, String invitedPlayerId, String game) {
+        OtpErlangObject[] id = new OtpErlangObject[2];
+        id[0] = new OtpErlangAtom(playerId);
+        id[1] = new OtpErlangAtom(game);
+        String send_invite = "send_invite"; 
+        OtpErlangObject[] msg = new OtpErlangObject[4];
+        msg[0] = mailboxes.get("startUp").self();
+        msg[1] = new OtpErlangAtom(send_invite);
+        msg[2] = new OtpErlangTuple(id);
+        msg[3] = new OtpErlangAtom(invitedPlayerId);
+        OtpErlangTuple tuple = new OtpErlangTuple(msg);
+        mailboxes.get("startUp").send("pong", server, tuple);  
+    }
+    
+    public void send_replyToInvite(String playerID, String game, String inviterID, String answer){
+        OtpErlangObject[] id = new OtpErlangObject[2];
+        id[0] = new OtpErlangAtom(playerID);
+        id[1] = new OtpErlangAtom(game);
+        String send_replyToInvite = "send_replyToInvite";
+        OtpErlangObject[] msg = new OtpErlangObject[5];
+        msg[0] = mailboxes.get("startUp").self();
+        msg[1] = new OtpErlangAtom(send_replyToInvite);
+        msg[2] = new OtpErlangTuple(id);
+        msg[3] = new OtpErlangAtom(answer);
+        OtpErlangTuple tuple = new OtpErlangTuple(msg);
+        mailboxes.get("startUp").send("pong", server, tuple);
+    }
+    
     
     
     
@@ -85,6 +113,8 @@ public class Converter {
         OtpErlangTuple tuple = new OtpErlangTuple(msg);
         mailboxes.get(gameID).send("host", server, tuple);
     }
+    
+    
     
     /**
      *

@@ -7,28 +7,42 @@ pong(Lists) ->
             io:format("Pong finished...~n",[]);         
         
  	{StartCommunicationWithJavaId,ID,GameID,ping} ->           
-	    NewList = append({PlayerID, GameID}, StartCommunicationWithJavaId, Lists),
+	    NewList = dict:append({ID, GameID}, StartCommunicationWithJavaId, Lists),
 	    io:format("Ping~n",[]),
             StartCommunicationWithJavaId ! {self(),pong},    %% 
 	    pong(NewList);
 
-	%%Detta kommer från "servern"
+	%% Detta kommer från "servern"
 	{a,Skruffs,NewPosition} ->
 	    [MailBox ! {self(), NewPosition}|| {Tupeln, MailBox} <- Lists, Tupeln =:= Skruffs],
 	    pong(Lists);
 
 	{b, PlayerID, GameID, Message} ->	   
-	    Recipient = find({PlayerID, GameID}, Lists),
-	    Recipient ! {self(), Message},
+	    RecipientID = dict:find({PlayerID, GameID}, Lists),
+	    RecipientID ! {self(), Message},
 	    pong(Lists);
-
+		
+	{c, RecipientID, InviterID, Message} ->
+		RecipientID ! {self(), InviterID, Message},
+		pong(Lists);
+	
+	{d, InviterID, Message} ->
+		InviterID ! {self(), Message},
+		pong(Lists);
+	
+	
+	%% Detta kommer ifrån klienter/hosts
 	{MailBox, "send_moveRequest",{PlayerID, GameID}, newPosition} ->
 		self() ! {send_host, GameID, {a, PlayerID, GameID, newPosition}};
 		
 	{Mailbox, "send_chatLine",{PlayerID, GameID}, chatLine} ->
-		self() ! {send_all, GameID, {b, PlayerID, GameID}, chatLine};
+		self() ! {send_all, GameID, {b, PlayerID, GameID, chatLine}};
 		
-	
+	{Mailbox, "send_invite", {PlayerID, Game}, InvitedPlayerID} ->
+		self() ! {send_to_id, InvitedPlayerID, {c, PlayerID, Game, "send_invite"}};
+		
+	{Mailbox, "send_replyToInvite", {PlayerID, InviterID}, answer} ->
+		self() ! {send_to_id, InviterID, {d, PlayerID, answer}};
 		
 		
 	
