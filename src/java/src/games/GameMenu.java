@@ -8,7 +8,6 @@ package games;
 import java.awt.event.*;
 import javax.swing.*;
 
-
 @SuppressWarnings("serial")
 public class GameMenu extends JFrame {
 
@@ -17,14 +16,14 @@ public class GameMenu extends JFrame {
     private JMenuItem menuItem;
     //private JButton gameButton, connectButton, sendButton;
     private JButton gameButton, connectButton;
-    public static JPanel mainPanel;
+    private JPanel mainPanel;
     //public JTextArea chatOutput;
     //private JScrollPane chatScrollPane;
     //public JTextField chatInput;
-    private GameMenuChattInput GMCI;
+    private GameMenuChatt GMCI;
 
-    public GameMenu() {        
-        super("Yolo");        
+    public GameMenu(String name, String ip, String port) {
+        super("Yolo");
         init_menubar();
         init_content();
         setJMenuBar(menuBar);
@@ -34,14 +33,23 @@ public class GameMenu extends JFrame {
         setSize(550, 400);
         setResizable(false);
         setLocationRelativeTo(null);
-        addKeyListener(new WindowListener());
-        //GMCI.receiveMessage();
+        addKeyListener(new WindowListener());        
     }
 
     private void init_content() {
         mainPanel = new JPanel();
         getContentPane().add(mainPanel);
         mainPanel.setLayout(null);
+        
+        //Chatt
+        GMCI = new GameMenuChatt();
+        GMCI.setMainPanel(mainPanel);
+        Thread t = new Thread(GMCI);
+        t.start();
+        
+        
+        //Här skulle det nog vara bra om online listan skapades som en egen tråd
+        
         ImageIcon iconGames = new ImageIcon(getClass().getResource("games.gif"));
         gameButton = new JButton("Games", iconGames);
         gameButton.setBounds(10, 10, 128, 128);
@@ -65,30 +73,7 @@ public class GameMenu extends JFrame {
         connectButton = new JButton("Connect to Server!");
         connectButton.setBounds(10, 286, 266, 50);
         connectButton.addActionListener(new ButtonListener());
-        mainPanel.add(connectButton);
-
-        //Chat written messages area
-        /*chatOutput = new JTextArea(10, 16);
-        chatOutput.setEditable(false);
-        chatOutput.setBackground(Color.WHITE);
-        chatScrollPane = new JScrollPane(chatOutput);
-        chatScrollPane.setBounds(286, 10, 250, 266);
-        mainPanel.add(chatScrollPane);*/
- 
-        //Chat writing area
-        GMCI = new GameMenuChattInput();
-        GMCI.setMainPanel(mainPanel);
-        Thread t = new Thread(GMCI); 
-        
-        t.start();
-        /*chatInput = new JTextField(10);
-         chatInput.setBounds(286, 286, 160, 50);
-         chatInput.addKeyListener(new WindowListener());
-         mainPanel.add(chatInput);
-         sendButton = new JButton("Send");
-         sendButton.addActionListener(new ButtonListener());
-         sendButton.setBounds(456, 286, 80, 50);
-         mainPanel.add(sendButton);*/
+        mainPanel.add(connectButton);       
     }
 
     private void init_menubar() {
@@ -147,7 +132,9 @@ public class GameMenu extends JFrame {
     }
 
     private class ButtonListener implements ActionListener {
-        communication.Converter converter = new communication.Converter();
+
+        communication.CommunicationWithErlang converter = new communication.CommunicationWithErlang();
+
         @Override
         public void actionPerformed(ActionEvent e) {
             switch (((AbstractButton) e.getSource()).getText()) {
@@ -206,7 +193,8 @@ public class GameMenu extends JFrame {
             // TODO Auto-generated method stub
         }
     }
-    public JPanel getMainPanel(){
+
+    public JPanel getMainPanel() {
         return mainPanel;
     }
 }

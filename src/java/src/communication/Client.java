@@ -12,24 +12,20 @@ import com.ericsson.otp.erlang.OtpMbox;
  */
 public class Client{
 
-    static Converter converter;
+    static CommunicationWithErlang converter;
     static games.GameMenu gMenu;
-    //static utils.Utils utils;
-    static Imup imup;
     static OtpMbox mailbox;
 
-    public static void main(String[] _args) {
-        //Thread t = new Thread(new Client());
-        //t.start();   
+    public static void main(String[] _args) {   
+        
         gMenu = new games.GameMenu();
-        converter = new Converter();
-        mailbox = converter.createMailbox("startUp");
-        converter.send_messagePing("erlang", "startUp", mailbox);
+        converter = new CommunicationWithErlang();
+        mailbox = converter.createMailbox("erlang","startUp");        
     }
 
     /*public void run() {
         gMenu = new images.GameMenu();
-        converter = new Converter();
+        converter = new CommunicationWithErlang();
         converter.send_messagePing("erlang", "startUp");
     }*/
     

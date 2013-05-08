@@ -10,21 +10,20 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import javax.swing.*;
 import games.Game;
-import communication.Converter;
+import communication.CommunicationWithErlang;
 
 @SuppressWarnings("serial")
 public class TicTacToe extends Game {
 
     private int counter;
     private TttPlayer x, o;
-    private Converter converter;
+    private CommunicationWithErlang converter;
     private OtpMbox mailbox;
 
     public TicTacToe(String player1, String player2, String gameID) {
         super("TicTacToe", gameID, 3, 3, 400, 400);
-        converter = new Converter();
-        mailbox = converter.createMailbox(gameID);
-        converter.send_messagePing(player2, gameID, mailbox);
+        converter = new CommunicationWithErlang();
+        mailbox = converter.createMailbox(player2, gameID);
         x = new TttPlayer(player1, "X");
         o = new TttPlayer(player2, "O");
 
@@ -126,8 +125,10 @@ public class TicTacToe extends Game {
             // SKICKA TILL SERVER
             if (!(((JButton) e.getSource()).getText().equals("X")
                     || ((JButton) e.getSource()).getText().equals("O"))) {
+
+                utils.sendMove(getGameID(), o.getPlayerID(), e.getActionCommand(), mailbox);
                 //winCheck måste skickas med så länge vi inte har en fungerande server
-                converter.send(convertToErlang(getGameID(), o.getPlayerID(), e.getActionCommand(),winCheck), mailbox);
+                //converter.send(convertToErlang(getGameID(), o.getPlayerID(), e.getActionCommand(), winCheck), mailbox);
             }
         }
     }
