@@ -1,5 +1,7 @@
 package games.tictactoeHost;
 
+import com.ericsson.otp.erlang.OtpMbox;
+import utils.*;
 import javax.swing.*;
 
 public class GameControl {
@@ -9,6 +11,8 @@ public class GameControl {
     private String gameID;
     private JButton[][] gameGrid;
     private TttPlayer x, o;
+    private OtpMbox mailbox;
+
 
     public GameControl(TicTacToe TTTGame, TttPlayer x, TttPlayer o) {
         counter = 0;
@@ -36,22 +40,20 @@ public class GameControl {
         return game;
     }
 
-    private class ServerListener {
-        // HÄMTA FÖRFRÅGAN FRÅN SERVER
-        public void serverPerformed() {
-            while (true) {
-                {gameID, playerID, {newPosition, wincheck}} = receive_MoveReq();
-                {i,j} = newPosition;
+    private void ServerListener {
+        while (true) {
+            Arguments arguments = Game.receiveMessage(mailbox);
+            String position = arguments.getArguments()[0];
+            
+            int[] xy = Utils.splitCoordinates(position);
                 
-                String playerType = (x.getPlayerID().equals(playerID) ? "X" : "O");
+                String playerType = (x.getPlayerID().equals(arguments.getPlayerID()) ? "X" : "O");
                 if (!((counter % 2 == 0) && playerType.equals("O")) 
                         || ((counter % 2 != 0) && playerType.equals("X"))) {
-                    // SKICKA setText till server som ska skickas vidare till alla andra spelare
-                    // send_cmd(getGameID(), getPlayerID(), i+j, winCheck(playerType));
+                    sendMessage(mailbox, getGameID(), "host", "{" + xy[0] + xy[1] + ", " + winCheck(playerType) + "}");
                     counter++;
                 }
             }
-        }
     }
     
     
