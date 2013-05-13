@@ -2,6 +2,7 @@ package games.tictactoeHost;
 
 import com.ericsson.otp.erlang.OtpMbox;
 import utils.*;
+import communication.*;
 import javax.swing.*;
 
 public class GameControl {
@@ -12,9 +13,10 @@ public class GameControl {
     private JButton[][] gameGrid;
     private TttPlayer x, o;
     private OtpMbox mailbox;
-
+    private CommunicationWithErlang converter;  
 
     public GameControl(TicTacToe TTTGame, TttPlayer x, TttPlayer o) {
+        converter = new CommunicationWithErlang();
         counter = 0;
         this.x = x;
         this.o = o;
@@ -40,9 +42,9 @@ public class GameControl {
         return game;
     }
 
-    private void ServerListener {
+    private void ServerListener() {
         while (true) {
-            Arguments arguments = Game.receiveMessage(mailbox);
+            Arguments arguments = Utils.receiveMessage(mailbox, converter);
             String position = arguments.getArguments()[0];
             
             int[] xy = Utils.splitCoordinates(position);
@@ -50,7 +52,7 @@ public class GameControl {
                 String playerType = (x.getPlayerID().equals(arguments.getPlayerID()) ? "X" : "O");
                 if (!((counter % 2 == 0) && playerType.equals("O")) 
                         || ((counter % 2 != 0) && playerType.equals("X"))) {
-                    sendMessage(mailbox, getGameID(), "host", "{" + xy[0] + xy[1] + ", " + winCheck(playerType) + "}");
+                    Utils.sendMessage(mailbox, converter, getGameID(), "host", "{" + xy[0] + xy[1] + ", " + winCheck(playerType) + "}");
                     counter++;
                 }
             }

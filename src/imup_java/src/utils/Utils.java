@@ -7,26 +7,33 @@ import javax.swing.*;
 import communication.*;
 
 public class Utils {
-    private games.Game game;
-    static Client client = new Client();
-    static CommunicationWithErlang converter = new CommunicationWithErlang();
-
-    public void sendChattMessage(String input, OtpMbox mailbox, String playerID, String gameID) {
-        if (!input.equals("")) {
-            DateFormat df = DateFormat.getTimeInstance(DateFormat.SHORT);
-            Date date = new Date();
-            String newOutput = " [" + df.format(date) + "]: " + input + "\n";
-            converter.send(game.convertToErlang(mailbox, gameID, playerID, "{" + newOutput + "}"), mailbox);
-        }
+    
+    public static OtpErlangTuple convertToErlang(OtpMbox mailbox, String gameID, String playerID, String arguments) {
+        OtpErlangObject[] msg = new OtpErlangObject[3];
+        msg[0] = mailbox.self();
+        msg[1] = new OtpErlangAtom(gameID);
+        msg[2] = new OtpErlangAtom(playerID);
+        msg[3] = new OtpErlangAtom(arguments);
+        return new OtpErlangTuple(msg);
+    }
+    
+    public static Arguments convertToJava(OtpErlangObject robj) {
+        OtpErlangTuple rtuple = (OtpErlangTuple) robj;
+        String GameID = rtuple.elementAt(1).toString();
+        String PlayerID = rtuple.elementAt(2).toString();
+        String ArgumentsString = rtuple.elementAt(3).toString();
+        return new Arguments(GameID, PlayerID, ArgumentsString);
     }
 
-    public void receiveChattMessage(JTextArea chatOutput, OtpMbox mailbox, String playerID, String gameID) {
-        OtpErlangObject temp = converter.receive(mailbox);
-        String[] message = game.convertToJava(temp);
-        String currentOutput = chatOutput.getText();
-        chatOutput.setText(currentOutput + "\n" + message[3]);
+    public static Arguments receiveMessage(OtpMbox mailbox, CommunicationWithErlang converter) {
+        return convertToJava(converter.receive(mailbox));
     }
-
+    
+    public static void sendMessage(OtpMbox mailbox, CommunicationWithErlang converter, String gameID, String playerID, String arguments) {
+        converter.send(convertToErlang(mailbox, gameID, playerID, arguments), mailbox);
+    }
+    
+    
     /*public void sendMove(String gameID, String playerID, String actionCommand, OtpMbox mailbox) {
         converter.send(convertToErlang(mailbox, new Arguments(mailbox, gameID, playerID, "{" + actionCommand + "}")), mailbox);
     }
@@ -75,7 +82,7 @@ public class Utils {
     }
     
     public static int[] splitCoordinates(String coordinates) {
-        int[] xy = new int[1];
+        int[] xy = new int[2];
         xy[0] = Integer.parseInt(coordinates.substring(0, 1));
         xy[1] = Integer.parseInt(coordinates.substring(1, 2));
         return xy;

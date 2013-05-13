@@ -59,31 +59,21 @@ public abstract class Game extends JFrame {
     public String getGameID() {
         return this.gameID;
     }
+    /*
+    public static void sendChattMessage(String input, CommunicationWithErlang converter, OtpMbox mailbox, String playerID, String gameID) {
+        if (!input.equals("")) {
+            DateFormat df = DateFormat.getTimeInstance(DateFormat.SHORT);
+            Date date = new Date();
+            String newOutput = " [" + df.format(date) + "]: " + input + "\n";
+            sendMessage(mailbox, converter, gameID, playerID, newOutput);
+        }
+    }
 
-    public OtpErlangTuple convertToErlang(OtpMbox mailbox, String gameID, String playerID, String arguments) {
-        OtpErlangObject[] msg = new OtpErlangObject[3];
-        msg[0] = mailbox.self();
-        msg[1] = new OtpErlangAtom(gameID);
-        msg[2] = new OtpErlangAtom(playerID);
-        msg[3] = new OtpErlangAtom(arguments);
-        return new OtpErlangTuple(msg);
+    public static void receiveChattMessage(JTextArea chatOutput, CommunicationWithErlang converter, OtpMbox mailbox, String playerID, String gameID) {
+        Arguments arguments = receiveMessage(mailbox, converter);
+        String[] message = arguments.getArguments();
+        String currentOutput = chatOutput.getText();
+        chatOutput.setText(currentOutput + "\n" + message[3]);
     }
-    
-    public Arguments convertToJava(OtpErlangObject robj) {
-        OtpErlangTuple rtuple = (OtpErlangTuple) robj;
-        String GameID = rtuple.elementAt(1).toString();
-        String PlayerID = rtuple.elementAt(2).toString();
-        String ArgumentsString = rtuple.elementAt(3).toString();
-        return new Arguments(GameID, PlayerID, ArgumentsString);
-    }
-    
-    public Arguments receiveMessage(OtpMbox mailbox) {
-        return convertToJava(converter.receive(mailbox));
-    }
-    
-    public void sendMessage(OtpMbox mailbox, String gameID, String playerID, String arguments) {
-        converter.send(convertToErlang(mailbox, gameID, playerID, arguments), mailbox);
-    }
-    
-    
+    */
 }

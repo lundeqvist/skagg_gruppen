@@ -55,7 +55,7 @@ public class TicTacToe extends Game {
 
     private void ServerListener() {
         while (true) {
-            Arguments arguments = receiveMessage(mailbox);
+            Arguments arguments = Utils.receiveMessage(mailbox, converter);
             String position = arguments.getArguments()[0];
             
             int[] xy = Utils.splitCoordinates(position);
@@ -84,7 +84,7 @@ public class TicTacToe extends Game {
         public void actionPerformed(ActionEvent e) {
             if (!(((JButton) e.getSource()).getText().equals("X")
                     || ((JButton) e.getSource()).getText().equals("O"))) {
-                sendMessage(mailbox, getGameID(), o.getPlayerID(), "{" + e.getActionCommand() + "}");
+                Utils.sendMessage(mailbox, converter, getGameID(), o.getPlayerID(), "{" + e.getActionCommand() + "}");
             }
         }
     }

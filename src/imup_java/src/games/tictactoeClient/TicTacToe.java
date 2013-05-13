@@ -27,8 +27,6 @@ public class TicTacToe extends Game {
                 gameGrid[i][j].addActionListener(new ButtonListener());
             }
         }
-        //x.setGameWindow(gameGrid, gameID);
-        //o.setGameWindow(gameGrid, gameID);
     }
 
     public int getRows() {
@@ -55,11 +53,11 @@ public class TicTacToe extends Game {
 
     private void ServerListener() {
         while (true) {
-            Arguments arguments = receiveMessage(mailbox);
+            Arguments arguments = Utils.receiveMessage(mailbox, converter);
             String position = arguments.getArguments()[0];
             
             int[] xy = Utils.splitCoordinates(position);
-            
+  
             
             String wincheck = arguments.getArguments()[1];
             String playerType = (x.getPlayerID().equals(arguments.getPlayerID()) ? "X" : "O");
@@ -84,7 +82,7 @@ public class TicTacToe extends Game {
         public void actionPerformed(ActionEvent e) {
             if (!(((JButton) e.getSource()).getText().equals("X")
                     || ((JButton) e.getSource()).getText().equals("O"))) {
-                sendMessage(mailbox, getGameID(), o.getPlayerID(), "{" + e.getActionCommand() + "}");
+                Utils.sendMessage(mailbox, converter, getGameID(), o.getPlayerID(), "{" + e.getActionCommand() + "}");
             }
         }
     }
