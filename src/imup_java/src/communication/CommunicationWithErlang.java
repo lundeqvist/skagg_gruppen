@@ -13,16 +13,15 @@ import java.util.logging.Logger;
 
 public class CommunicationWithErlang {
     static String server = "server";
-    Client client = new Client();
     
-    public OtpMbox createMailbox(String playerID, String gameID) {
+    public OtpMbox createMailbox(String gameID, String playerID) {
         OtpNode self = null;
         OtpMbox mbox = null;
 
         try {
             self = new OtpNode(gameID, "test");
             mbox = self.createMbox("facserver");
-            send_messagePing(playerID, gameID, mbox);
+            send_messagePing(gameID, playerID, mbox);
             if (self.ping(server, 2000)) {
                 return mbox;         
             } else {
@@ -35,11 +34,11 @@ public class CommunicationWithErlang {
         return mbox;
     }
 
-    private void send_messagePing(String playerID, String gameID, OtpMbox mailbox) {
+    private void send_messagePing(String gameID, String playerID, OtpMbox mailbox) {
         OtpErlangObject[] msg = new OtpErlangObject[4];
         msg[0] = mailbox.self();
-        msg[1] = new OtpErlangAtom(playerID);
-        msg[2] = new OtpErlangAtom(gameID);
+        msg[1] = new OtpErlangAtom(gameID);
+        msg[2] = new OtpErlangAtom(playerID);
         msg[3] = new OtpErlangAtom("ping");
         OtpErlangTuple tuple = new OtpErlangTuple(msg);
         

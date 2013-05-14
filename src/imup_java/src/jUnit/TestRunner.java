@@ -1,12 +1,11 @@
 package jUnit;
 
-import games.GameMenu;
+import communication.Client;
 
 public class TestRunner {
 
 	public static void main(String[] args)
 	{
-		GameMenu gm = new GameMenu();
-		gm.go();
+		Client client = new Client();
 	}
 }

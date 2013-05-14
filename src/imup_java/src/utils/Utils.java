@@ -1,19 +1,22 @@
 package utils;
 
 import com.ericsson.otp.erlang.*;
-import java.text.DateFormat;
-import java.util.Date;
-import javax.swing.*;
 import communication.*;
 
 public class Utils {
     
     public static OtpErlangTuple convertToErlang(OtpMbox mailbox, String gameID, String playerID, String arguments) {
-        OtpErlangObject[] msg = new OtpErlangObject[3];
+        OtpErlangObject[] msg = new OtpErlangObject[4];
         msg[0] = mailbox.self();
         msg[1] = new OtpErlangAtom(gameID);
         msg[2] = new OtpErlangAtom(playerID);
-        msg[3] = new OtpErlangAtom(arguments);
+        
+        String[] parsedTuple = parseTupleString(arguments);
+        OtpErlangObject[] args = new OtpErlangObject[parsedTuple.length];
+        for(int i=0;i<parsedTuple.length;i++) {
+            args[i] = new OtpErlangAtom(parsedTuple[i]);
+        }
+        msg[3] = new OtpErlangTuple(args);
         return new OtpErlangTuple(msg);
     }
     
@@ -33,21 +36,11 @@ public class Utils {
         converter.send(convertToErlang(mailbox, gameID, playerID, arguments), mailbox);
     }
     
-    
-    /*public void sendMove(String gameID, String playerID, String actionCommand, OtpMbox mailbox) {
-        converter.send(convertToErlang(mailbox, new Arguments(mailbox, gameID, playerID, "{" + actionCommand + "}")), mailbox);
-    }
-
-    public void receiveMove() {
-        OtpErlangObject temp = converter.receive(mailbox);
-        String[] message = convertToJava(temp);
-    }
-*/
     public static int serverConnect() {
         return 0;
     }
 
-    /*public static String[] tupleToStringArray(OtpErlangTuple tuple) {
+    public static String[] tupleToStringArray(OtpErlangTuple tuple) {
         String[] tupleArgs = new String[tuple.arity()];
         for (int i = 0; i < tuple.arity(); i++) {
             tupleArgs[i] = tuple.elementAt(i).toString();
@@ -70,7 +63,7 @@ public class Utils {
         }
         return tupleArgs;
     }
-*/
+
     public static String[] parseTupleString(String tuple) {
         tuple = tuple.trim();
         tuple = tuple.substring(1, tuple.length() - 1);

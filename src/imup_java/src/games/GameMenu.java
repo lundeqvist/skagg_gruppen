@@ -7,6 +7,7 @@ package games;
 //import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
+import communication.*;
 
 @SuppressWarnings("serial")
 public class GameMenu extends JFrame {
@@ -14,23 +15,22 @@ public class GameMenu extends JFrame {
     private JMenuBar menuBar;
     private JMenu menu, submenu;
     private JMenuItem menuItem;
-    //private JButton gameButton, connectButton, sendButton;
     private JButton gameButton, connectButton;
     private JPanel mainPanel;
-    //public JTextArea chatOutput;
-    //private JScrollPane chatScrollPane;
-    //public JTextField chatInput;
-    private GameMenuChatt GMCI;
+    private GameMenuChat GMCI;
+    private OnlineList onlineList;
+    private String playerID;
 
-    public GameMenu(String name, String ip, String port) {
+    public GameMenu(String playerID, String ip, String port) {
         super("Yolo");
+        this.playerID = playerID;
         init_menubar();
         init_content();
         setJMenuBar(menuBar);
 
         setVisible(true);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(550, 400);
+        setSize(800, 400);
         setResizable(false);
         setLocationRelativeTo(null);
         addKeyListener(new WindowListener());        
@@ -42,36 +42,41 @@ public class GameMenu extends JFrame {
         mainPanel.setLayout(null);
         
         //Chatt
-        GMCI = new GameMenuChatt();
+        GMCI = new GameMenuChat();
         GMCI.setMainPanel(mainPanel);
         Thread t = new Thread(GMCI);
         t.start();
         
+        onlineList = new OnlineList(playerID);
+        onlineList.setMainPanel(mainPanel);
+        Thread tOnline = new Thread(onlineList);
+        tOnline.start();
         
         //Här skulle det nog vara bra om online listan skapades som en egen tråd
         
         ImageIcon iconGames = new ImageIcon(getClass().getResource("games.gif"));
-        gameButton = new JButton("Games", iconGames);
-        gameButton.setBounds(10, 10, 128, 128);
+        gameButton = new JButton(iconGames);
+        //gameButton = new JButton("Games");
+        gameButton.setBounds(260, 10, 128, 128);
         gameButton.addActionListener(new ButtonListener());
         mainPanel.add(gameButton);
         ImageIcon iconBomber = new ImageIcon(getClass().getResource("bomberman.png"));
         gameButton = new JButton(iconBomber);
-        gameButton.setBounds(148, 10, 128, 128);
+        gameButton.setBounds(398, 10, 128, 128);
         gameButton.addActionListener(new ButtonListener());
         mainPanel.add(gameButton);
         ImageIcon iconChess = new ImageIcon(getClass().getResource("chess.png"));
         gameButton = new JButton(iconChess);
-        gameButton.setBounds(10, 148, 128, 128);
+        gameButton.setBounds(260, 148, 128, 128);
         gameButton.addActionListener(new ButtonListener());
         mainPanel.add(gameButton);
         ImageIcon iconTroll = new ImageIcon(getClass().getResource("troll.png"));
         gameButton = new JButton(iconTroll);
-        gameButton.setBounds(148, 148, 128, 128);
+        gameButton.setBounds(398, 148, 128, 128);
         gameButton.addActionListener(new ButtonListener());
         mainPanel.add(gameButton);
         connectButton = new JButton("Connect to Server!");
-        connectButton.setBounds(10, 286, 266, 50);
+        connectButton.setBounds(260, 286, 266, 50);
         connectButton.addActionListener(new ButtonListener());
         mainPanel.add(connectButton);       
     }
@@ -133,7 +138,7 @@ public class GameMenu extends JFrame {
 
     private class ButtonListener implements ActionListener {
 
-        communication.CommunicationWithErlang converter = new communication.CommunicationWithErlang();
+        CommunicationWithErlang converter = new CommunicationWithErlang();
 
         @Override
         public void actionPerformed(ActionEvent e) {
