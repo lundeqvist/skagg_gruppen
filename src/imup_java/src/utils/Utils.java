@@ -3,8 +3,22 @@ package utils;
 import com.ericsson.otp.erlang.*;
 import communication.*;
 
+/**
+ *  Utils contains helpful functions that is needed by all classes.
+ */
 public class Utils {
     
+    /**
+     * Converts java arguments to erlang code, into a OtpErlangTuple so that it can be sent over
+     * network.
+     * 
+     * @param mailbox the mailbox the arguments is sent from.
+     * @param gameID 
+     * @param playerID
+     * @param arguments a string with as many arguments as you want represented
+     *                  as a erlang tuple.
+     * @return a OtPErlangTuple of all arguments as OtpErlangAtoms.
+     */
     public static OtpErlangTuple convertToErlang(OtpMbox mailbox, String gameID, String playerID, String arguments) {
         OtpErlangObject[] msg = new OtpErlangObject[4];
         msg[0] = mailbox.self();
@@ -20,6 +34,12 @@ public class Utils {
         return new OtpErlangTuple(msg);
     }
     
+    /**
+     * Converts erlang code coming from server to java code and separates 
+     * all the arguments to a Arguments.
+     * @param robj OtpErlangObject
+     * @return a Arguments object with all arguments.
+     */
     public static Arguments convertToJava(OtpErlangObject robj) {
         OtpErlangTuple rtuple = (OtpErlangTuple) robj;
         String GameID = rtuple.elementAt(1).toString();
@@ -27,11 +47,25 @@ public class Utils {
         String ArgumentsString = rtuple.elementAt(3).toString();
         return new Arguments(GameID, PlayerID, ArgumentsString);
     }
-
+    
+    /**
+     * Receives a message from erlang server
+     * @param mailbox the mailbox the message should be received to.
+     * @param converter 
+     * @return a Arguments object with all arguments.
+     */
     public static Arguments receiveMessage(OtpMbox mailbox, CommunicationWithErlang converter) {
         return convertToJava(converter.receive(mailbox));
     }
     
+    /**
+     * Sends a message to a erlang server
+     * @param mailbox
+     * @param converter
+     * @param gameID
+     * @param playerID
+     * @param arguments 
+     */
     public static void sendMessage(OtpMbox mailbox, CommunicationWithErlang converter, String gameID, String playerID, String arguments) {
         converter.send(convertToErlang(mailbox, gameID, playerID, arguments), mailbox);
     }

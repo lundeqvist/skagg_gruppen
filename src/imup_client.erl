@@ -179,22 +179,21 @@ recv(Socket, ReceiverPID) ->
 
     case Data of
 	{message, Msg} ->
-	    %%io:format("Message received: ~p ~n", [Msg]),
+	    io:format("Message received: ~p ~n", [Msg]),
 	    ReceiverPID ! Msg,
 	    recv(Socket, ReceiverPID);
 	%% send to specific client code
 	{ok, Message} ->
-	    %%io:format("ok, ~p. ~n", [Message]),
-	    ReceiverPID ! {ok, Message},
+	    io:format("ok, ~p. ~n", [Message]),
 	    recv(Socket, ReceiverPID);
 	{error, Reason} ->
-	    io:format("Error with reason: ~p ~n", [Reason]);
+		io:format("Error with reason: ~p ~n", [Reason]);
 	disconnect ->
-	    %%io:format("Disconnected from server.", []),
-	    gen_tcp:close(Socket);
-    	Dat ->
-	    ReceiverPID ! {unexpected_data, Dat},
-	    recv(Socket, ReceiverPID)
+		%%io:format("Disconnected from server.", []),
+		gen_tcp:close(Socket);
+	Dat ->
+		%%ReceiverPID ! {unexpected_data, Dat},
+		recv(Socket, ReceiverPID)
     end.
 
     

@@ -1,15 +1,14 @@
 package games;
 
-//import communication.Client;
-//import games.GameControl;
-//import games.GameControl;
-//import utils.Utils;
-//import java.awt.*;
+import com.ericsson.otp.erlang.OtpMbox;
 import java.awt.event.*;
 import javax.swing.*;
 import communication.*;
 
-@SuppressWarnings("serial")
+/**
+ * GameMenu is the main process who creates and handles the OnlineList
+ * and GameMenuChat 
+ */
 public class GameMenu extends JFrame {
 
     private JMenuBar menuBar;
@@ -19,11 +18,24 @@ public class GameMenu extends JFrame {
     private JPanel mainPanel;
     private GameMenuChat GMCI;
     private OnlineList onlineList;
-    private String playerID;
+    private String playerID, users;
+    private OtpMbox mailbox;
 
-    public GameMenu(String playerID, String ip, String port) {
+    /**
+     * @param mailbox   is the mailbox that were used in Client that OnlineList
+     *                  will need to communicate with the server to update the
+     *                  onlinelist.
+     * 
+     * @param playerID  
+     * @param ip        
+     * @param port
+     * @param users     String representation of all the users who is online.
+     */
+    public GameMenu(OtpMbox mailbox, String playerID, String ip, String port, String users) {
         super("Yolo");
         this.playerID = playerID;
+        this.mailbox = mailbox;
+        this.users = users;
         init_menubar();
         init_content();
         setJMenuBar(menuBar);
@@ -36,6 +48,9 @@ public class GameMenu extends JFrame {
         addKeyListener(new WindowListener());        
     }
 
+    /**
+     * Initiates all the GUI, GameMenuChat and OnlineList.
+     */
     private void init_content() {
         mainPanel = new JPanel();
         getContentPane().add(mainPanel);
@@ -47,12 +62,10 @@ public class GameMenu extends JFrame {
         Thread t = new Thread(GMCI);
         t.start();
         
-        onlineList = new OnlineList(playerID);
+        onlineList = new OnlineList(mailbox, playerID, users);
         onlineList.setMainPanel(mainPanel);
         Thread tOnline = new Thread(onlineList);
         tOnline.start();
-        
-        //Här skulle det nog vara bra om online listan skapades som en egen tråd
         
         ImageIcon iconGames = new ImageIcon(getClass().getResource("games.gif"));
         gameButton = new JButton(iconGames);
@@ -136,6 +149,9 @@ public class GameMenu extends JFrame {
         JOptionPane.showMessageDialog(this, "Looks like you have problems, do you want some help?");
     }
 
+    /**
+     * Listens to all buttons and creates the game with the user(s) that is picked.
+     */
     private class ButtonListener implements ActionListener {
 
         CommunicationWithErlang converter = new CommunicationWithErlang();
@@ -145,6 +161,7 @@ public class GameMenu extends JFrame {
             switch (((AbstractButton) e.getSource()).getText()) {
                 case "Games":
                     System.out.println("Här ska något bra hända");
+                    
                     //new GameControl("Henrik", "Niklas");
                     //converter.createMailbox("game1");
                     break;
@@ -165,6 +182,7 @@ public class GameMenu extends JFrame {
                     break;
                 default:
                     System.out.println("Not implemented yet");
+                    System.out.println(onlineList.getSelectedUsers().toString());
                     break;
             }
         }

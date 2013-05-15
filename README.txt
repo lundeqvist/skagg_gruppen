@@ -1,5 +1,12 @@
 ==== COURSE ==== 
 
+starta server:
+imup_server:start(5555).
+
+erl -sname server -setcookie test
+
+client:start().
+
 Operating Systems and Multicore programming (1DT089) Spring 2013
 
 Department of Information Technology 

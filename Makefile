@@ -1,57 +1,56 @@
-#################### 
-GROUP_NUMBER := xx
-####################
+ERLC_FLAGS=-Wall
 
-ERLC := erlc
-ERLC_FLAGS := -W -I include
+SOURCES=$(wildcard src/*.erl)
 
-ERL_FILES := $(wildcard src/*.erl)
-BEAM_FILES := $(patsubst src/%.erl,ebin/%.beam,${ERL_FILES})
+HEADERS=$(wildcard src/*.hrl)
+
+OBJECTS:=$(SOURCES:src/%.erl=ebin/%.beam)
+
+APPNAME=Project IMUP
+
+.PHONY: doc doc_url skeleton
+
+all: $(OBJECTS)
+
+ebin/%.beam: src/%.erl 
+	erlc $(ERLC_FLAGS) -o ebin/ $<
+
+clean:
+	rm -Rf ebin/*
+	rm -Rf src/*.beam
+	rm -Rf doc/*.html
+
+doc: 
+	erl -noshell -run edoc_run application "'$(APPNAME)'"  '"."' '[{def,{vsn,"$(VSN)"}}, {stylesheet, "my_style.css"}]'
+
+doc_url:
+	@echo 
+	@echo "EDoc index page available at file://$(PWD)/doc/index.html"
+	@echo
+
+### EUnit ###
+
+# Make a comma separated list:
+# http://ftp.gnu.org/old-gnu/Manuals/make-3.79.1/html_chapter/make_8.html
 
 comma:= ,
 empty:=
 space:= $(empty) $(empty)
 
-EDOC_SRC := $(filter-out %_test.erl, $(ERL_FILES))
-EDOC_SRC_LIST := [$(subst $(space),$(comma),$(patsubst src/%.erl,'src/%.erl', $(EDOC_SRC)))]
+OBJECTS_LIST:= $(subst $(space),$(comma),$(OBJECTS:ebin/%.beam=%))
 
-REQUIRED_DIR_NAME := pop_2012_project_group_$(GROUP_NUMBER)
+test: $(OBJECTS)
+	erl -noshell -pa ebin -eval 'eunit:test([$(OBJECTS_LIST)], [])' -s init stop
 
-PROJECT_DIR := $(notdir $(shell pwd))
+testv: $(OBJECTS)
+	erl -noshell -pa ebin -eval 'eunit:test([$(OBJECTS_LIST)], [verbose])' -s init stop
 
-USER=$(shell whoami)
-ARCHIVE_NAME :=  $(REQUIRED_DIR_NAME)_archive_$(USER)_$(shell date "+%Y-%m-%d__%H:%M:%S")__.tar.gz
-ARCHIVE_DIR := ..
+test_%: ebin/%.beam
+	erl -noshell -pa ebin -eval "eunit:test($(subst test_,, $@), [])" -s init stop
 
-all: $(BEAM_FILES)
+testv_%: ebin/%.beam
+	erl -noshell -pa ebin -eval "eunit:test($(subst testv_,, $@), [verbose])" -s init stop
 
-ebin/%.beam: src/%.erl
-	$(ERLC) $(ERLC_FLAGS) -o ebin $<
 
-start: all
-	(cd ebin && erl -eval 'foo:start(), init:stop()')
 
-test: all
-	(cd ebin && erl -noinput -eval 'eunit:test({dir, "."}, [verbose]), init:stop()')
-
-doc: $(BEAM_FILES)
-	erl -noshell -eval "edoc:files($(EDOC_SRC_LIST), [{dir, 'doc/html'}])" -s init stop
-
-clean:
-	rm -fr .#* *.dump
-	rm -fr ebin/*.beam
-	(cd doc/html && find . -name "*" -a ! -name overview.edoc -exec rm -rf {} \;)
-
-remove_finderinfo:
-	-xattr -d "com.apple.FinderInfo" src/*.erl include/*.hrl doc/* doc/html/*
-
-archive: clean
-ifeq ($(REQUIRED_DIR_NAME), $(PROJECT_DIR))
-	(cd $(ARCHIVE_DIR) && tar cvfz $(ARCHIVE_NAME) $(PROJECT_DIR) )
-	@echo 
-	@echo NOTE: Archive created in $(ARCHIVE_DIR)/$(ARCHIVE_NAME)
-	@echo 
-else
-	@echo Error: Wrong directory name >$(PROJECT_DIR)<, change to >$(REQUIRED_DIR_NAME)<
-endif
 

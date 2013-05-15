@@ -30,14 +30,16 @@ import java.util.logging.Logger;
 import utils.*;
 import games.*;
 
+/**
+ * Client creates the opening window where you enter your name and IP sends
+ * it to the server and then creates GameMenu
+ */
 public class Client {
-
     OtpMbox mailbox;
     CommunicationWithErlang converter;
     JTextField userNameTextField;
     JTextField userIpTextField;
     JTextField userPortTextField;
-    String gameID = "client";
 
     public Client() {
         converter = new CommunicationWithErlang(); 
@@ -95,11 +97,12 @@ public class Client {
                     } catch (UnknownHostException ex) {
                         Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
                     }
-                    String arguments = "{" + ipNumber + ":" + portNumber + "," + myIp + "}";
+                    String arguments = "{" + ipNumber + "," + portNumber + "," + myIp + "}";
                     
-                    mailbox = converter.createMailbox(gameID, playerID);                 
-                    Utils.sendMessage(mailbox, converter, gameID, playerID, arguments);
-                    GameMenu gMenu = new GameMenu(playerID, ipNumber, portNumber); 
+                    mailbox = converter.createMailbox("onlinelist", playerID);                 
+                    Utils.sendMessage(mailbox, converter, "onlinelist", playerID, arguments);
+                    Arguments users = Utils.receiveMessage(mailbox, converter);
+                    GameMenu gMenu = new GameMenu(mailbox, playerID, ipNumber, portNumber, users.getArguments().toString()); 
             }
 
         }

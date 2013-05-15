@@ -20,8 +20,7 @@ import javax.swing.JTextField;
 import utils.*;
 
 /**
- *
- * @author Linda
+ *  The graphical representation of GameMenuChat
  */
 public class GameMenuChat implements Runnable {
 
@@ -35,6 +34,9 @@ public class GameMenuChat implements Runnable {
     static private String playerID = "name";
     private OtpMbox mailbox;
 
+    /**
+     *  Initiates GUI and starts the receiveMessage loop.
+     */
     public void init_content() {
         converter = new CommunicationWithErlang();
         chatInput = new JTextField(10);
@@ -55,6 +57,9 @@ public class GameMenuChat implements Runnable {
         receiveMessage();
     }
 
+    /**
+     *  Receives and prints when a new message is close.
+     */
     public void receiveMessage() {
         while (true) {
             Arguments arguments = Utils.receiveMessage(mailbox, converter);
@@ -74,6 +79,9 @@ public class GameMenuChat implements Runnable {
         init_content();
     }
 
+    /**
+     * Sends the message to the server when the button "Send" is pressed.
+     */
     private class ButtonListener implements ActionListener {
 
         @Override
@@ -91,6 +99,9 @@ public class GameMenuChat implements Runnable {
         }
     }
 
+    /**
+     * Sends the message to the server when the enter button is pressed.
+     */
     private class WindowListener implements KeyListener {
         @Override
         public void keyPressed(KeyEvent e) {

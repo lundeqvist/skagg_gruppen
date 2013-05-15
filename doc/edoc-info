@@ -1,0 +1,5 @@
+%% encoding: UTF-8
+{application,'Project IMUP'}.
+{packages,[]}.
+{modules,[client,converter,imup_client,imup_listener,imup_server,imup_tests,
+          overview,test]}.
