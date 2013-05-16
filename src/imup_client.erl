@@ -80,7 +80,9 @@ connect(IP, PortNo) ->
       Port::integer(),
       ReceiverPID::pid().
 connect(IP, PortNo, ReceiverPID) ->
+    io:format("~n imup_client ~n", []),
     {ok, Socket} = gen_tcp:connect(IP, PortNo, [binary, {active, false}, {packet, 2}]),
+    io:format("connect ~n",[]),
     RPID = spawn_link(fun() -> recv(Socket, ReceiverPID) end),
     Socket.
 
@@ -179,12 +181,13 @@ recv(Socket, ReceiverPID) ->
 
     case Data of
 	{message, Msg} ->
-	    io:format("Message received: ~p ~n", [Msg]),
+	    %%io:format("Message received: ~p ~n", [Msg]),
 	    ReceiverPID ! Msg,
 	    recv(Socket, ReceiverPID);
 	%% send to specific client code
 	{ok, Message} ->
-	    io:format("ok, ~p. ~n", [Message]),
+	    %%io:format("ok, ~p. ~n", [Message]),
+	    %%ReceiverPID ! {ok, Message},
 	    recv(Socket, ReceiverPID);
 	{error, Reason} ->
 		io:format("Error with reason: ~p ~n", [Reason]);
@@ -192,7 +195,7 @@ recv(Socket, ReceiverPID) ->
 		%%io:format("Disconnected from server.", []),
 		gen_tcp:close(Socket);
 	Dat ->
-		%%ReceiverPID ! {unexpected_data, Dat},
+		ReceiverPID ! {unexpected_data, Dat},
 		recv(Socket, ReceiverPID)
     end.
 

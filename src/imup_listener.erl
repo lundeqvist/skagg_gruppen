@@ -7,7 +7,7 @@
 -define(TCP_OPTIONS, [binary, {packet, 2}, {active, false}, {reuseaddr, true}]).
 
 %%-------------------------------------------------------------------------
-%% @spec (ReceiverPID, Port, HandlerPID) -> Pid | {error,Error}
+%% @spec (RPID, Port, HandlerPID) -> Port | {error,Error}
 %% @doc To be called by the main server process to be able to listen to port Port and HandlerPID will receive the messages.
 %%      If listen/2 fails with Reason, the function returns {error,Reason}.
 %%      If successful it will return the Pid of the socket.
@@ -20,22 +20,12 @@
 %% </div>      
 %% @end
 %%-------------------------------------------------------------------------
-%% -spec listen(Port, HandlerPID) -> port() | tuple() when
-%%       Port::integer(),
-%%       HandlerPID::pid().
-%% listen(Port, HandlerPID) ->
-%%     process_flag(trap_exit, true),
-%%     {ok, LSocket} = gen_tcp:listen(Port, ?TCP_OPTIONS),
-%%     spawn_link(fun() -> accept(LSocket, HandlerPID) end),
-%%     LSocket.
-
-
-
--spec listen(ReceiverPID, Port, HandlerPID) -> port() | tuple() when
-      ReceiverPID::pid(),
+-spec listen(RPID, Port, HandlerPID) -> any() when
+      RPID::pid(),
       Port::integer(),
       HandlerPID::pid().
-listen(ReceiverPID, Port, HandlerPID) ->  
+listen(ReceiverPID, Port, HandlerPID) ->
+    process_flag(trap_exit, true),
     {Ok, LSocket} = gen_tcp:listen(Port, ?TCP_OPTIONS),
     CommunicationPID = spawn_link(fun() -> communication(HandlerPID, running) end),
     AcceptorPID = spawn_link(fun() -> accept(LSocket, CommunicationPID) end),
@@ -247,8 +237,10 @@ process_data(Socket, Data, HandlerPID) when is_binary(Data) ->
 	    HandlerPID ! {get_players_pids, self(), GameID},
 	    receive
 		{players, SList} ->
+		    FilteredMsg = filterMsg(HandlerPID, GameID, Socket, Msg),			
+				
 		    TmpFun = fun(S) ->
-		    		     convey_message(S, {message, Msg})
+		    		     convey_message(S,  FilteredMsg)
 		    	     end,
 		    lists:foreach(TmpFun, SList),
 		    %%[convey_message(Sock, {message, Msg}) || Sock <- SList],
@@ -282,7 +274,7 @@ process_data(Socket, Data, HandlerPID) when is_binary(Data) ->
 		    {error, not_joined}
 	    end;
 	{get_users, GameID} ->
-	    HandlerPID ! {get_players, self(), GameID},
+	    HandlerPID ! {get_players_ids, self(), GameID},
 	    receive
 		{players, SList} ->
 		    HandlerPID ! {get_client_id, self(), Socket},
@@ -334,4 +326,36 @@ convey_message(Socket, Data) ->
     gen_tcp:send(Socket, BinData).
 
 
+filterMsg(HandlerPID, GameID, Socket, Msg) ->
+    case Msg of
+	{get_data, Data} ->
+	    case Data of
+		users ->
+		    getPlayersIDList(HandlerPID, GameID, Socket);
+		_ ->
+		    {error, unknown_data}
+	    end;
+	Msg ->
+	    HandlerPID ! {get_client_id, self(), Socket},
+	    receive
+		{id, CID} ->
+		    {message, {GameID, CID, Msg}};
+		_ ->
+		    {error, noid}
+	    end
+    end.
 
+getPlayersIDList(HandlerPID, GameID, Socket) ->
+    HandlerPID ! {get_players_ids, self(), GameID},
+    receive
+	{players, SList} ->
+	    HandlerPID ! {get_client_id, self(), Socket},
+	    receive
+		{id, CID} ->
+		    {message, {GameID, CID, SList}};
+		_ ->
+		    {error, noid}
+	    end;
+	_ ->
+	    {error, nousers}
+    end.	    

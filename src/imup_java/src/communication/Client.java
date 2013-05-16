@@ -33,8 +33,9 @@ import games.*;
 /**
  * Client creates the opening window where you enter your name and IP sends
  * it to the server and then creates GameMenu
- */
+ */ 
 public class Client {
+
     OtpMbox mailbox;
     CommunicationWithErlang converter;
     JTextField userNameTextField;
@@ -102,7 +103,7 @@ public class Client {
                     mailbox = converter.createMailbox("onlinelist", playerID);                 
                     Utils.sendMessage(mailbox, converter, "onlinelist", playerID, arguments);
                     Arguments users = Utils.receiveMessage(mailbox, converter);
-                    GameMenu gMenu = new GameMenu(mailbox, playerID, ipNumber, portNumber, users.getArguments().toString()); 
+                    GameMenu gMenu = new GameMenu(mailbox, playerID, ipNumber, portNumber, users.getArguments()); 
             }
 
         }

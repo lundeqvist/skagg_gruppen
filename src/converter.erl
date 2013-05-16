@@ -25,39 +25,14 @@ pong(Lists, Socket) ->
 	    io:format(PortNumber, []),
 	    io:format("~n",[]),
 	    io:format(ClientIP, []),
-	    io:format("~n",[]),
-	    Bool = is_atom(ServerIP),
-	    io:format(Bool, []),
+	    io:format("~n",[]),	 
 	    SIP = atom_to_list(ServerIP),
-	    %%erlang:string_atom(SIP, ServerIP),
-	    %%atom_to_list(ServerIP),
-	    Bool2 = is_list(SIP),
-	    
-	    io:format(Bool2,[]),
-
-	    Port = list_to_integer(atom_to_list(PortNumber)),
-	    %%Testar med localhost istället för serverip
-	    %%imup_client:connect("127.0.0.1", 5555, self()),
-	    
-	    TmpSocket = imup_client:connect(SIP, 5555, self()),
-
-	    %%io:format("After connect ~n", []),
-	    imup_client:send(TmpSocket, {enter, PlayerID}),
-	    imup_client:send(TmpSocket, {join_game, GameID}),
-	    imup_client:send(TmpSocket, {get_users, GameID}),	        
-	    pong(Lists, TmpSocket);
-	%% VIKTORS KOD, vad som nu behövs skickas till servern för att logga in
-	
-	%%{MailBox, GameID, host, {ServerIP, PortNumber, HostIP}} ->
-	  %%  io:format("Host-login på server~n", []),
-	    
-	%%loggin för host på server
-	%%Socket = imup_client:connect(ServerIP, PortNumber, self()),
-	%%imup_client:send(Socket, {enter, PlayerID}),
-	%%imup_client:send(Socket, {host_game, GameID}),
-	%%imup_client:send(Socket, {get_users, GameID}),
-	%%pong(Lists);
-	
+	    Port = list_to_integer(atom_to_list(PortNumber)),	    
+	    TmpSocket = imup_client:connect(SIP,Port, self()),
+	    imup_client:send(TmpSocket, {enter, PlayerID}),  
+	    imup_client:send(TmpSocket, {join_game, GameID}),	    
+	    imup_client:send(TmpSocket, {send_all, GameID, {get_data, users}}),	               
+	    pong(Lists, TmpSocket);	
 	
 	
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -83,18 +58,19 @@ pong(Lists, Socket) ->
 	%%från host
 	%%när man inte får flytta ska man få ett meddelande till chattrutan i det fönstret
 
-
+	{MailBox, GameID, PlayerID, {join_game}} ->
+	    io:format("join game ~n", []),
+	    imup_client:send(Socket, {join_game, GameID}),
+	    pong(Lists, Socket);
 
 	%%Detta ska skickas vidare till servern, från klient java
-	{MailBox, GameID, PlayerID, NewPosition} ->
+	{MailBox, GameID, PlayerID, Message} ->
+	    io:format("Från client med gameID ",[]),
 	    io:format(GameID,[]),
-	    %%self() ! {send_host, SpelId,{a,ID, SpelId, NewPosition}},
-	    imup_client:send(Socket,{GameID, PlayerID, NewPosition}),
-	    pong(Lists, Socket);
-	
-	%%{MailBox, chatt, {ID, SpelId},Message} ->
-	  %%  self() ! {send_all, SpelId{ID, SpelId, Message}},
-	    %%pong(Lists);
+	    io:format("~n",[]),	    
+	    imup_client:send(Socket,{send_all, GameID, Message}),
+	    io:format("skickat vidare till servern ~n", []),
+	    pong(Lists, Socket);	
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 		
@@ -104,13 +80,8 @@ pong(Lists, Socket) ->
 	%%{4, ID, sendInvite, invited}
 	%%{5, ID, inviteID, accept/dont accept}	
 	%%{6, ID, enter} -> när man loggar in.
-	
-
-
-
-
-
 	%%
+
 	_ ->
 	    io:format("error~n",[])
     end.

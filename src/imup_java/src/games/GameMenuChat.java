@@ -31,9 +31,14 @@ public class GameMenuChat implements Runnable {
     private JScrollPane chatScrollPane;
     static private CommunicationWithErlang converter;
     static private String gameID = "chattId";
-    static private String playerID = "name";
+    static private String playerID;
     private OtpMbox mailbox;
 
+    public GameMenuChat(String playerID) {
+        this.playerID = playerID;
+    }
+    
+    
     /**
      *  Initiates GUI and starts the receiveMessage loop.
      */
@@ -70,6 +75,7 @@ public class GameMenuChat implements Runnable {
         }
     }
 
+    
     public void setMainPanel(JPanel mainPanelFromGM) {
         mainPanel = mainPanelFromGM;
     }

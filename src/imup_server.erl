@@ -153,11 +153,17 @@ handler(Clients, Games, BackupPID) ->
 	    SockList = [Cli || {ok, Cli} <- [dict:find(CID, Clients) || CID <- PList] ],
 	    ReceiverPID ! {players, SockList},
 	    handler(Clients, Games, BackupPID);
-	{get_players, ReceiverPID, GameID} ->
+	{get_players_ids, ReceiverPID, GameID} ->
 	    {ok, PList} = dict:find(GameID, Games),
 
 	    ReceiverPID ! {players, PList},
 	    handler(Clients, Games, BackupPID);
+	{get_players, ReceiverPID, GameID} ->
+	    {ok, PList} = dict:find(GameID, Games),
+	    SockList = [{Cli,Cid} || {{ok, Cli}, Cid} <- [{dict:find(CID, Clients),CID} || CID <- PList] ],
+	    %% {Socket, ClientID} %%
+	    ReceiverPID ! {players, SockList},
+	    handler(Clients, Games, BackupPID);	    
 	{get_host, ReceiverPID, GameID} ->
 	    {ok, [HID|_T]} = dict:find(GameID, Games),
 	    {ok, HPID} = dict:find(HID, Clients),

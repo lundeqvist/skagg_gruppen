@@ -11,9 +11,9 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import utils.*;
 
-    /**
-     * The graphical representation of all the users who is online.
-     */
+/**
+* The graphical representation of all the users who is online.
+*/
 public class OnlineList implements Runnable {
     private JPanel mainPanel;
     private JList<String> onlineList;
@@ -22,12 +22,8 @@ public class OnlineList implements Runnable {
     private Vector<String> userVector;
     private String playerID, gameID = "onlineID";
     
-    /**
-     * @param mailbox 
-     * @param playerID
-     * @param users 
-     */
-    public OnlineList(OtpMbox mailbox, String playerID, String users) {
+    
+    public OnlineList(OtpMbox mailbox, String playerID, String[] users) {
         this.playerID = playerID;
         this.mailbox = mailbox;
         userVector = new Vector<String>();
@@ -64,11 +60,10 @@ public class OnlineList implements Runnable {
      * 
      * @param users String representation of all the users who is online.
      */
-    private void updateUsers(String users) {
+    private void updateUsers(String[] users) {
         userVector.clear();
-        String[] userlist = Utils.parseTupleString(users);
-        for(int i=0;i<userlist.length;i++){
-            userVector.addElement(userlist[i]);
+        for(int i=0;i<users.length;i++){
+            userVector.addElement(users[i]);
         }       
     }
     
@@ -76,7 +71,8 @@ public class OnlineList implements Runnable {
      * @return a stringarray of the selected users.
      */
     public String[] getSelectedUsers() {
-       return onlineList.getSelectedValuesList().toArray(new String[4]);
+        int players = onlineList.getSelectedIndices().length;
+       return onlineList.getSelectedValuesList().toArray(new String[players]);
     }
     
     /**
@@ -86,7 +82,7 @@ public class OnlineList implements Runnable {
     private void serverListener() {
         while (true) {
             Arguments arguments = Utils.receiveMessage(mailbox, converter);
-            String users = arguments.getArguments()[0];
+            String[] users = arguments.getArguments();
             updateUsers(users);
         }
     }

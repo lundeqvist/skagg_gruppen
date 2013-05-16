@@ -51,7 +51,7 @@ public class TicTacToe extends Game {
         return text;
     }   
 
-    private void ServerListener() {
+    private void serverListener() {
         while (true) {
             Arguments arguments = Utils.receiveMessage(mailbox, converter);
             String position = arguments.getArguments()[0];
