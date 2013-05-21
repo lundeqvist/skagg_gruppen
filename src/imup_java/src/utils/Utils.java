@@ -34,6 +34,29 @@ public class Utils {
         return new OtpErlangTuple(msg);
     }
     
+    
+    public static OtpErlangTuple convertUsersToErlang(OtpMbox mailbox, String gameID, String playerID, String arguments, String[] users) {
+        OtpErlangObject[] msg = new OtpErlangObject[5];
+        msg[0] = mailbox.self();
+        msg[1] = new OtpErlangAtom(gameID);
+        msg[2] = new OtpErlangAtom(playerID);
+        
+        String[] parsedTuple = parseTupleString(arguments);
+        OtpErlangObject[] args = new OtpErlangObject[parsedTuple.length];
+        for(int i=0;i<parsedTuple.length;i++) {
+            args[i] = new OtpErlangAtom(parsedTuple[i]);
+        }
+        msg[3] = new OtpErlangTuple(args);
+        
+        OtpErlangObject[] usrs = new OtpErlangObject[users.length];
+        for(int i=0;i<users.length;i++) {
+            usrs[i] = new OtpErlangAtom(users[i]);
+        }
+        msg[4] = new OtpErlangList(usrs);
+        return new OtpErlangTuple(msg);
+    }    
+    
+    
     /**
      * Converts erlang code coming from server to java code and separates 
      * all the arguments to a Arguments.
@@ -48,6 +71,16 @@ public class Utils {
         return new Arguments(GameID, PlayerID, ArgumentsString);
     }
     
+    public static Arguments convertUsersToJava(OtpErlangObject robj) {
+        OtpErlangTuple rtuple = (OtpErlangTuple) robj;
+        String GameID = rtuple.elementAt(1).toString();
+        String PlayerID = rtuple.elementAt(2).toString();
+        String ArgumentsString = rtuple.elementAt(3).toString();
+        String UsersString = rtuple.elementAt(4).toString();
+        return new Arguments(GameID, PlayerID, ArgumentsString, UsersString);
+    }
+    
+    
     /**
      * Receives a message from erlang server
      * @param mailbox the mailbox the message should be received to.
@@ -56,6 +89,10 @@ public class Utils {
      */
     public static Arguments receiveMessage(OtpMbox mailbox, CommunicationWithErlang converter) {
         return convertToJava(converter.receive(mailbox));
+    }
+    
+    public static Arguments receiveMessageUsers(OtpMbox mailbox, CommunicationWithErlang converter) {
+        return convertUsersToJava(converter.receive(mailbox));
     }
     
     /**
@@ -69,6 +106,10 @@ public class Utils {
     public static void sendMessage(OtpMbox mailbox, CommunicationWithErlang converter, String gameID, String playerID, String arguments) {
         converter.send(convertToErlang(mailbox, gameID, playerID, arguments), mailbox);
     }
+    
+    public static void sendMessageToUsers(OtpMbox mailbox, CommunicationWithErlang converter, String gameID, String playerID, String argument, String[] users) {
+        converter.send(convertUsersToErlang(mailbox, gameID, playerID, argument, users), mailbox);
+    }    
     
     public static int serverConnect() {
         return 0;
@@ -109,6 +150,7 @@ public class Utils {
     }
     
     public static int[] splitCoordinates(String coordinates) {
+        coordinates = coordinates.replace("'","");
         int[] xy = new int[2];
         xy[0] = Integer.parseInt(coordinates.substring(0, 1));
         xy[1] = Integer.parseInt(coordinates.substring(1, 2));

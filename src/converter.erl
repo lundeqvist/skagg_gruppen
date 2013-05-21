@@ -10,6 +10,9 @@ pong(Lists, Socket) ->
  	{ComMailbox, GameID, PlayerID, ping} ->           
 	    NewList = lists:append(Lists, [{{GameID, PlayerID},ComMailbox}]),   
 	    io:format("Ping~n",[]),
+	    io:format("GameID: ",[]),
+	    io:format(GameID,[]),
+	    io:format("~n",[]),
             ComMailbox ! {self(),pong},	   	   
 	    pong(NewList, Socket);
 	
@@ -34,53 +37,47 @@ pong(Lists, Socket) ->
 	    imup_client:send(TmpSocket, {send_all, GameID, {get_data, users}}),	               
 	    pong(Lists, TmpSocket);	
 	
-	
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%%Detta kommer från "servern"
-	{GameID, PlayerID, Message} ->	   
+	{GameID, PlayerID, Message} ->	  
+			io:format("Message received from server: ",[]),
+			io:format(GameID,[]),
 	    List = [MailBox || {X, MailBox} <- Lists, X =:= {GameID, PlayerID}],
-	    io:format("From server", []),
-	    io:format("~n", []),
-	    io:format(GameID, []),
-	    io:format("~n", []),
-	    io:format(PlayerID, []),
-	    io:format("~n~n", []),
-	    [A] = List,
-	    A ! {self(), GameID, PlayerID, Message},
+	    if List =:= [] ->
+		    List1 = [MailBox || {{X,Y}, MailBox} <- Lists, X =:= GameID],
+		    if List1 =:= [] ->			    
+			    List2 = [MailBox || {{X,Y}, MailBox} <- Lists, X =:= gameMenu],
+			    [A] = List2,
+			    A ! {self(), GameID, PlayerID, Message},
+			    pong(Lists, Socket);
+				true ->
+			    [A|_] = List1,
+			    A ! {self(), GameID, PlayerID, Message},
+			    pong(Lists, Socket)		
+		    end;
+			true ->
+		    [A] = List,
+		    A ! {self(), GameID, PlayerID, Message},
+		    pong(Lists, Socket)	    
+	    end;			        
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%Detta ska skickas vidare till servern, från klient java
+	{MailBox, GameID, PlayerID, Message, OtherPlayers} ->
+	    io:format("Invite sent~n", []),
+	    imup_client:send(Socket, {send_to_users, OtherPlayers, {GameID, PlayerID, Message}}),
 	    pong(Lists, Socket);
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	
-
-	
-
-
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	%%från host
-	%%när man inte får flytta ska man få ett meddelande till chattrutan i det fönstret
-
 	{MailBox, GameID, PlayerID, {join_game}} ->
 	    io:format("join game ~n", []),
 	    imup_client:send(Socket, {join_game, GameID}),
 	    pong(Lists, Socket);
-
-	%%Detta ska skickas vidare till servern, från klient java
+	
 	{MailBox, GameID, PlayerID, Message} ->
 	    io:format("Från client med gameID ",[]),
 	    io:format(GameID,[]),
 	    io:format("~n",[]),	    
-	    imup_client:send(Socket,{send_all, GameID, Message}),
-	    io:format("skickat vidare till servern ~n", []),
+	    imup_client:send(Socket,{send_all, GameID, {GameID, PlayerID, Message}}),
 	    pong(Lists, Socket);	
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-		
-	%%{1, {ID, gameID}, move/newPosition}
-	%%{2, {ID, gameID}, chatMessage}
-	%%{3, ID, startGame, co-player} 
-	%%{4, ID, sendInvite, invited}
-	%%{5, ID, inviteID, accept/dont accept}	
-	%%{6, ID, enter} -> när man loggar in.
-	%%
 
 	_ ->
 	    io:format("error~n",[])

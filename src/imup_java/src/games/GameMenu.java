@@ -5,10 +5,12 @@ import java.awt.event.*;
 import javax.swing.*;
 import communication.*;
 import utils.*;
+import games.tictactoeHost.*;
+import games.tictactoeClient.*;
 
 /**
- * GameMenu is the main process who creates and handles the OnlineList
- * and GameMenuChat 
+ * GameMenu is the main process who creates and handles the OnlineList and
+ * GameMenuChat
  */
 @SuppressWarnings("serial")
 public class GameMenu extends JFrame {
@@ -25,24 +27,24 @@ public class GameMenu extends JFrame {
     private OtpMbox mailbox, mailboxUsers;
     private CommunicationWithErlang converter;
     private int gameCounter = 0;
-     /**
-     * @param mailbox   is the mailbox that were used in Client that OnlineList
-     *                  will need to communicate with the server to update the
-     *                  onlinelist.
-     * 
-     * @param playerID  
-     * @param ip        
+
+    /**
+     * @param mailbox is the mailbox that were used in Client that OnlineList
+     * will need to communicate with the server to update the onlinelist.
+     *
+     * @param playerID
+     * @param ip
      * @param port
-     * @param users     String representation of all the users who is online.
+     * @param users String representation of all the users who is online.
      */
     public GameMenu(OtpMbox mailbox, String playerID, String ip, String port, String[] users) {
-        super("Yolo");
+        super("IMUP");
         this.playerID = playerID;
         this.mailboxUsers = mailbox;
         this.users = users;
         converter = new CommunicationWithErlang();
-        mailbox = converter.createMailbox(playerID, "GameMenu"); 
-        
+        this.mailbox = converter.createMailbox("gameMenu", playerID);
+
         init_menubar();
         init_content();
         setJMenuBar(menuBar);
@@ -52,7 +54,7 @@ public class GameMenu extends JFrame {
         setSize(800, 400);
         setResizable(false);
         setLocationRelativeTo(null);
-        addKeyListener(new WindowListener());        
+        addKeyListener(new WindowListener());
     }
 
     /**
@@ -62,20 +64,23 @@ public class GameMenu extends JFrame {
         mainPanel = new JPanel();
         getContentPane().add(mainPanel);
         mainPanel.setLayout(null);
-        
+
         //Chatt
         GMCI = new GameMenuChat(playerID);
         GMCI.setMainPanel(mainPanel);
         Thread t = new Thread(GMCI);
         t.start();
-        
+
         onlineList = new OnlineList(mailboxUsers, playerID, users);
         onlineList.setMainPanel(mainPanel);
         Thread tOnline = new Thread(onlineList);
         tOnline.start();
         
+        Thread listener = new Thread(new ServerListener());
+        listener.start();
+
         //Här skulle det nog vara bra om online listan skapades som en egen tråd
-        
+
         ImageIcon iconTicTacToe = new ImageIcon(getClass().getResource("games.gif"));
         gameButton = new JButton("TicTacToe", iconTicTacToe);
         //gameButton = new JButton("Games");
@@ -100,7 +105,7 @@ public class GameMenu extends JFrame {
         connectButton = new JButton("Connect to Server!");
         connectButton.setBounds(260, 286, 266, 50);
         connectButton.addActionListener(new ButtonListener());
-        mainPanel.add(connectButton);       
+        mainPanel.add(connectButton);
     }
 
     private void init_menubar() {
@@ -159,20 +164,22 @@ public class GameMenu extends JFrame {
     }
 
     /**
-     * Listens to all buttons and creates the game with the user(s) that is picked.
-     */    
+     * Listens to all buttons and creates the game with the user(s) that is
+     * picked.
+     */
     private class ButtonListener implements ActionListener {
+
         @Override
         public void actionPerformed(ActionEvent e) {
             switch (((AbstractButton) e.getSource()).getText()) {
                 case "TicTacToe":
-                    Utils.sendMessage(mailbox, converter, "tictactoe01",playerID, "{" + onlineList.getSelectedUsers() + "}");
+                    String[] selectedUsers = onlineList.getSelectedUsers();
+                    OtpMbox mbox = converter.createMailbox("ticTacToe", playerID);
+                    Utils.sendMessageToUsers(mbox, converter, "ticTacToe", playerID, "{confirminvite, ticTacToe}", selectedUsers);
+                    Thread t = new Thread(new ServerListenerInvite(mbox, "ticTacToe", playerID, selectedUsers, selectedUsers.length));
+                    t.start();
                     break;
-                //case "Send":
-                //Utils.updateChat(chatOutput, chatInput);
-                //break;
                 case "Connect to Server!":
-                    //Utils.serverConnect();
                     break;
                 case "Settings":
                     settings();
@@ -218,34 +225,81 @@ public class GameMenu extends JFrame {
             // TODO Auto-generated method stub
         }
     }
-    
-    private void serverListener() {
-        while (true) {
-            Arguments arguments = Utils.receiveMessage(mailbox, converter);
-            String answer; 
-            switch (arguments.getArguments()[0]) {
-                case "confirminvite":
-                    int answerint = JOptionPane.showConfirmDialog(null,arguments.getPlayerID() + " has invited you to play " + arguments.getArguments()[1] + ".", "Invite", JOptionPane.YES_NO_OPTION);
-                    answer = answerint == 0 ? "yes" : "no";
-                    Utils.sendMessage(mailbox, converter, playerID, "tic", "{" + answer + "}");
-                    break;
-                case "invite":
-                    answer = arguments.getArguments()[1];
-                    if (answer == "yes") {
-                        Utils.sendMessage(mailbox, converter, playerID, arguments.getGameID() + arguments.getPlayerID() + gameCounter, "{");
-                        gameCounter++;
-                    }
-                    else {
-                        
-                    }
-                    break;
-                default:
-                    break;
-            }
-        }
-    }
 
     public JPanel getMainPanel() {
         return mainPanel;
+    }
+
+    private class ServerListener implements Runnable {
+        private ServerListener() {
+        }
+
+        private void serverListener() {
+            while (true) {
+                Arguments arguments = Utils.receiveMessage(mailbox, converter);
+                String answer;
+                switch (arguments.getArguments()[0]) {
+                    case "confirminvite":
+                        int answerint = JOptionPane.showConfirmDialog(null, arguments.getPlayerID() + " has invited you to play " + arguments.getArguments()[1] + ".", "Invite", JOptionPane.YES_NO_OPTION);
+                        answer = answerint == 0 ? "yes" : "no";
+                        String[] user = {arguments.getPlayerID()};
+                        Utils.sendMessageToUsers(mailbox, converter, arguments.getGameID(), playerID, "{" + answer + "}", user);
+                        break;
+                    case "startup":
+                        Thread t = new Thread(new TicTacToeClient(arguments.getPlayerID(), playerID, arguments.getArguments()[1]));
+                        t.start();
+                    default:
+                        break;
+                }
+            }
+        }
+
+        @Override
+        public void run() {
+            serverListener();
+        }
+    }
+
+    private class ServerListenerInvite implements Runnable {
+
+        private OtpMbox mailbox;
+        private CommunicationWithErlang converter;
+        String[] selectedUsers;
+        int numberOfPlayers;
+        String gameID, playerID;
+
+        private ServerListenerInvite(OtpMbox mailbox, String gameID, String playerID, String[] selectedUsers, int numberOfPlayers) {
+            this.gameID = gameID;
+            this.playerID = playerID;
+            converter = new CommunicationWithErlang();
+            this.mailbox = mailbox;
+            //mailbox = converter.createMailbox(gameID, playerID);
+            this.selectedUsers = selectedUsers;
+            this.numberOfPlayers = numberOfPlayers;
+        }
+
+        private void serverListenerInvite() {
+            while (true) {
+                if (numberOfPlayers == 0) {
+                    Utils.sendMessageToUsers(mailbox, converter, gameID, playerID, "{startup, ticTacToe1337}", selectedUsers);
+                    Thread t = new Thread(new TicTacToeHost(playerID, selectedUsers[0], "ticTacToe1337"));
+                    t.start();
+                    return;
+                } else {
+                    Arguments arguments = Utils.receiveMessage(mailbox, converter);
+                    String answer = arguments.getArguments()[0];
+                    if (answer.equals("yes")) {
+                        numberOfPlayers--;
+                    } else {
+                        System.exit(0);
+                    }
+                }
+            }
+        }
+
+        @Override
+        public void run() {
+            serverListenerInvite();
+        }
     }
 }

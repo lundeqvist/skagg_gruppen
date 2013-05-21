@@ -72,4 +72,12 @@ public class CommunicationWithErlang {
         }
         return null;
     }
+    /*
+    public void runSnameTerminalStuff() {
+        final String cmdLine = "erl -sname " + server + " -setcookie " + "test";
+        try {
+            Process p = Runtime.getRunTime().exec("")
+        }
+    }
+    * */
 }

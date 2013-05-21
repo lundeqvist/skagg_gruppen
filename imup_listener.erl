@@ -189,12 +189,9 @@ acceptor(LSocket, ParentPID) ->
 		 {ok, Sock} ->
 		     Sock;
 		 {error, closed} ->
-		     io:format("Closed 1 ~n", []),
-		     acceptor(LSocket, ParentPID);
-		     %%exit(closed);
+		     exit(closed);
 		 {error, Reason} ->
-		     %%exit(Reason)
-		     acceptor(LSocket, ParentPID)
+		     exit(Reason)
 	     end,
     Pid = spawn(fun() ->
 			io:format("Connection accepted ~n", []),
@@ -240,8 +237,6 @@ loop(Sock, HandlerPID) ->
       P::pid().
 process_data(Socket, Data, HandlerPID) when is_binary(Data) ->
     case binary_to_term(Data) of
-	testing ->
-	    gen_tcp:close(Socket);
 	{send_host, GameID, Msg} ->
 	    HandlerPID ! {get_host, self(), GameID},
 	    receive
@@ -330,20 +325,10 @@ process_data(Socket, Data, HandlerPID) when is_binary(Data) ->
 	{enter, SenderID} ->
 	    HandlerPID ! {insert_client, self(), Socket, SenderID},
 	    receive
-		{inserted, UID} ->
-		    {uniqueid, UID};
-		{error, user_already_exists} ->
-		    {error, user_already_exists};
+		{ok, inserted} ->
+		    {ok, entered};
 		_ ->
 		    {error, not_entered}
-	    end;
-	{reconnect, OldSocket, UniqueID} ->
-	    HandlerPID ! {reconnect, self(), OldSocket, Socket, UniqueID},
-	    receive
-		reconnected ->
-		    reconnected;
-		_ ->
-		    {error, not_reconnected}
 	    end;
 	disconnect ->
 	    HandlerPID ! {remove_client, self(), Socket},

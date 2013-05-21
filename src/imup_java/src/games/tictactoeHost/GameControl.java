@@ -5,18 +5,19 @@ import utils.*;
 import communication.*;
 import javax.swing.*;
 
-public class GameControl {
+public class GameControl implements Runnable {
 
-    private TicTacToe game;
+    private TicTacToeHost game;
     private int gameRows, gameCols, counter;
-    private String gameID;
+    private String gameID = "tttHost";
     private JButton[][] gameGrid;
     private TttPlayer x, o;
     private OtpMbox mailbox;
-    private CommunicationWithErlang converter;  
+    private CommunicationWithErlang converter;
 
-    public GameControl(TicTacToe TTTGame, TttPlayer x, TttPlayer o) {
+    public GameControl(TicTacToeHost TTTGame, TttPlayer x, TttPlayer o) {
         converter = new CommunicationWithErlang();
+        mailbox = converter.createMailbox(gameID, x.getPlayerID());
         counter = 0;
         this.x = x;
         this.o = o;
@@ -26,10 +27,15 @@ public class GameControl {
         gameGrid = game.getGrid();
     }
 
+    public void run() {
+        Thread listener = new Thread(new ServerListener());
+        listener.start();
+    }
+
     public String getGameID() {
         return this.gameID;
     }
-    
+
     public TttPlayer getPlayerX() {
         return this.x;
     }
@@ -37,34 +43,45 @@ public class GameControl {
     public TttPlayer getPlayerO() {
         return this.o;
     }
-    
-    public TicTacToe getTTT() {
+
+    public TicTacToeHost getTTT() {
         return game;
     }
 
-    private void ServerListener() {
-        while (true) {
-            Arguments arguments = Utils.receiveMessage(mailbox, converter);
-            String position = arguments.getArguments()[0];
-            
-            int[] xy = Utils.splitCoordinates(position);
-                
+    private class ServerListener implements Runnable {
+
+        public ServerListener() {
+        }
+
+        private void serverListener() {
+            while (true) {
+                Arguments arguments = Utils.receiveMessage(mailbox, converter);
+                String position = arguments.getArguments()[0];
+
+                int[] xy = Utils.splitCoordinates(position);
+
                 String playerType = (x.getPlayerID().equals(arguments.getPlayerID()) ? "X" : "O");
-                if (!((counter % 2 == 0) && playerType.equals("O")) 
-                        || ((counter % 2 != 0) && playerType.equals("X"))) {
-                    Utils.sendMessage(mailbox, converter, getGameID(), "host", "{" + xy[0] + xy[1] + ", " + winCheck(playerType) + "}");
+                if (!(((counter % 2 == 0) && playerType.equals("O"))
+                        || ((counter % 2 != 0) && playerType.equals("X")))) {
+                    Utils.sendMessage(mailbox, converter, "ticTacToe1337", arguments.getPlayerID(), "{" + xy[0] + xy[1] + ", " + winCheck(playerType) + "}");
                     counter++;
                 }
             }
+        }
+
+        @Override
+        public void run() {
+            serverListener();
+        }
     }
-    
-    
+
     public String winCheck(String type) {
         for (int i = 1; i < gameRows - 1; i++) {
             for (int j = 1; j < gameCols - 1; j++) {
                 return checkSurroundings(i, j, type);
             }
         }
+        System.out.println("Hej");
         return "0";
     }
 
@@ -104,21 +121,21 @@ public class GameControl {
         if (gameGrid[i][j - 1].getText().equals(type)
                 && gameGrid[i][j].getText().equals(type)
                 && gameGrid[i][j + 1].getText().equals(type)) {
-                return player.getPlayerID();
+            return player.getPlayerID();
         } //colcheck
         else if (gameGrid[i - 1][j].getText().equals(type)
                 && gameGrid[i][j].getText().equals(type)
                 && gameGrid[i + 1][j].getText().equals(type)) {
-                return player.getPlayerID();
+            return player.getPlayerID();
         } //right diagonalcheck
         else if (gameGrid[i - 1][j - 1].getText().equals(type)
                 && gameGrid[i][j].getText().equals(type)
                 && gameGrid[i + 1][j + 1].getText().equals(type)) {
-                return player.getPlayerID();
+            return player.getPlayerID();
         } else if (gameGrid[i - 1][j + 1].getText().equals(type)
                 && gameGrid[i][j].getText().equals(type)
                 && gameGrid[i + 1][j - 1].getText().equals(type)) {
-                return player.getPlayerID();
+            return player.getPlayerID();
         } else {
             return boardFull();
         }
@@ -129,11 +146,11 @@ public class GameControl {
         for (int i = 0; i < gameRows; i++) {
             for (int j = 0; j < gameCols; j++) {
                 if (!(gameGrid[i][j].getText().equals(x.getType()) || gameGrid[i][j].getText().equals(o.getType()))) {
+                    System.out.println(gameGrid[i][j].getText());
                     return "0";
                 }
             }
         }
         return "-1";
     }
-
 }

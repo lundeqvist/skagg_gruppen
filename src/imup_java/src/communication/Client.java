@@ -41,14 +41,16 @@ public class Client {
     JTextField userNameTextField;
     JTextField userIpTextField;
     JTextField userPortTextField;
+    JFrame guiFrame;
 
     public Client() {
         converter = new CommunicationWithErlang(); 
+        //converter.runSnameTerminalStuff();
         init_GUI();
     }
     
     private void init_GUI() {
-        JFrame guiFrame = new JFrame();
+        guiFrame = new JFrame();
         JPanel guiPanel = new JPanel(new GridBagLayout());
         JLabel userNameLabel = new JLabel("Namn:");
         userNameTextField = new JTextField(20);
@@ -100,10 +102,11 @@ public class Client {
                     }
                     String arguments = "{" + ipNumber + "," + portNumber + "," + myIp + "}";
                     
-                    mailbox = converter.createMailbox("onlinelist", playerID);                 
+                    mailbox = converter.createMailbox("onlinelist", playerID);      
                     Utils.sendMessage(mailbox, converter, "onlinelist", playerID, arguments);
                     Arguments users = Utils.receiveMessage(mailbox, converter);
                     GameMenu gMenu = new GameMenu(mailbox, playerID, ipNumber, portNumber, users.getArguments()); 
+                    guiFrame.dispose();
             }
 
         }

@@ -11,7 +11,7 @@ import player.*;
 import utils.*;
 
 @SuppressWarnings("serial")
-public abstract class Game extends JFrame {
+public abstract class Game extends JFrame implements Runnable {
     //protected eller private? Vad är bäst måntro?
 
     protected String gameName, gameID;
@@ -47,7 +47,6 @@ public abstract class Game extends JFrame {
         setLocationRelativeTo(null);
         setSize(frameWidth, frameHeight);
         setResizable(false);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setTitle(gameName);
         setVisible(true);
     }

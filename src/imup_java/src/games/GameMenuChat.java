@@ -11,6 +11,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.text.DateFormat;
+import java.util.Date;
 import javax.swing.AbstractButton;
 import javax.swing.JButton;
 import javax.swing.JPanel;
@@ -20,7 +22,8 @@ import javax.swing.JTextField;
 import utils.*;
 
 /**
- *  The graphical representation of GameMenuChat
+ *
+ * @author Linda
  */
 public class GameMenuChat implements Runnable {
 
@@ -31,17 +34,13 @@ public class GameMenuChat implements Runnable {
     private JScrollPane chatScrollPane;
     static private CommunicationWithErlang converter;
     static private String gameID = "chattId";
-    static private String playerID;
+    private String playerID;
     private OtpMbox mailbox;
 
-    public GameMenuChat(String playerID) {
+    public GameMenuChat(String playerID){
         this.playerID = playerID;
     }
     
-    
-    /**
-     *  Initiates GUI and starts the receiveMessage loop.
-     */
     public void init_content() {
         converter = new CommunicationWithErlang();
         chatInput = new JTextField(10);
@@ -59,12 +58,10 @@ public class GameMenuChat implements Runnable {
         chatScrollPane.setBounds(536, 10, 250, 266);
         mainPanel.add(chatScrollPane);
         mailbox = converter.createMailbox(gameID, playerID);
+        Utils.sendMessage(mailbox, converter, gameID, playerID, "{join_game}"); 
         receiveMessage();
     }
 
-    /**
-     *  Receives and prints when a new message is close.
-     */
     public void receiveMessage() {
         while (true) {
             Arguments arguments = Utils.receiveMessage(mailbox, converter);
@@ -75,7 +72,6 @@ public class GameMenuChat implements Runnable {
         }
     }
 
-    
     public void setMainPanel(JPanel mainPanelFromGM) {
         mainPanel = mainPanelFromGM;
     }
@@ -85,17 +81,17 @@ public class GameMenuChat implements Runnable {
         init_content();
     }
 
-    /**
-     * Sends the message to the server when the button "Send" is pressed.
-     */
     private class ButtonListener implements ActionListener {
 
         @Override
         public void actionPerformed(ActionEvent e) {
             switch (((AbstractButton) e.getSource()).getText()) {
-                case "Send":
+                case "Send":                    
+                    DateFormat df = DateFormat.getTimeInstance(DateFormat.SHORT);
+                    Date date = new Date();
                     String input = chatInput.getText();
-                    Utils.sendMessage(mailbox, converter, gameID, playerID, "{" + input + "}");
+                    String newOutput = " [" + df.format(date) + "][" + playerID + "]: " + input + "\n";
+                    Utils.sendMessage(mailbox, converter, gameID, playerID, "{" + newOutput + "}");
                     chatInput.setText("");
                     break;
                 default:
@@ -105,20 +101,17 @@ public class GameMenuChat implements Runnable {
         }
     }
 
-    /**
-     * Sends the message to the server when the enter button is pressed.
-     */
     private class WindowListener implements KeyListener {
         @Override
         public void keyPressed(KeyEvent e) {
             // TODO Auto-generated method stub
             switch (e.getKeyCode()) {
                 case KeyEvent.VK_ENTER:
-                    //DateFormat df = DateFormat.getTimeInstance(DateFormat.SHORT);
-                    //Date date = new Date();
-                    //String newOutput = " [" + df.format(date) + "]: " + input + "\n";
+                    DateFormat df = DateFormat.getTimeInstance(DateFormat.SHORT);
+                    Date date = new Date();
                     String input = chatInput.getText();
-                    Utils.sendMessage(mailbox, converter, gameID, playerID, "{" + input + "}");
+                    String newOutput = " [" + df.format(date) + "][" + playerID + "]: " + input + "\n";
+                    Utils.sendMessage(mailbox, converter, gameID, playerID, "{" + newOutput + "}");
                     chatInput.setText("");
                     break;
                 default:

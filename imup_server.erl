@@ -117,85 +117,43 @@ restarter(BackupPID, HandlerPID, ListenerPID) ->
 %%%%%%%%%%%%%%%%%%%%%%
 handler(Clients, Games, BackupPID) ->
     receive
-	{exists, ReceiverPID, ClientID} ->
-	    case dict:is_key(ClientID, Clients) of
-		true ->
-		    ReceiverPID ! already_exists;
-		false ->
-		    ReceiverPID ! can_insert
-	    end,
-	    handler(Clients, Games, BackupPID);
 	{insert_client, ReceiverPID, Socket, Alias} ->
-	    case dict:is_key(Alias, Clients) of
-		false ->
-		    UID = erlang:phash2(Alias),
+	    TmpClients = dict:store(Socket, Alias, Clients),
+	    TmpClients2 = dict:store(Alias, Socket, TmpClients),
+	    ReceiverPID ! {ok, inserted},
 
-		    TmpClients = dict:store(Socket, Alias, Clients),
-		    TmpClients2 = dict:append_list(Alias, [Socket|UID], TmpClients),
-		    ReceiverPID ! {inserted, UID},
-
-		    BackupPID ! {update_clients, TmpClients2},
-		    handler(TmpClients2, Games, BackupPID);
-		true ->
-		    ReceiverPID ! {error, user_already_exists},
-		    handler(Clients, Games, BackupPID)
-	    end;
+	    BackupPID ! {update_clients, TmpClients2},
+	    handler(TmpClients2, Games, BackupPID);
 	{remove_client, ReceiverPID, ClientPID} ->
-	    %%{ok, CID} = dict:find(ClientPID, Clients),
-	    case dict:find(ClientPID, Clients) of
-		{ok, CID} ->
-		    TmpClients = dict:erase(ClientPID, Clients),
-		    TmpClients2 = dict:erase(CID, TmpClients),
-		    ReceiverPID ! {ok, removed},
-		    BackupPID ! {update_clients, TmpClients2},
-		    handler(TmpClients2, Games, BackupPID);
-		error ->
-		    ReceiverPID ! {error, not_found},
-		    handler(Clients, Games, BackupPID)
-	    end;
+	    {ok, CID} = dict:find(ClientPID, Clients),
+	    TmpClients = dict:erase(ClientPID, Clients),
+	    TmpClients2 = dict:erase(CID, TmpClients),
+	    ReceiverPID ! {ok, removed},
+
+	    BackupPID ! {update_clients, TmpClients2},
+	    handler(TmpClients2, Games, BackupPID);	    
 	{get_client_id, ReceiverPID, ClientPID} ->
-	    %%{ok , CID} = dict:find(ClientPID, Clients),
-	    case dict:find(ClientPID, Clients) of
-		{ok, CID} ->
-		    ReceiverPID ! {id, CID};
-		error ->
-		    ReceiverPID ! {error, not_found}
-	    end,
+	    {ok , CID} = dict:find(ClientPID, Clients),
+	    ReceiverPID ! {id, CID},
 	    handler(Clients, Games, BackupPID);
 	{get_client_pid, ReceiverPID, ClientID} ->
-	    %%{ok, CPID} = dict:find(ClientID, Clients),
-	    case dict:find(ClientID, Clients) of
-		{ok, [CPID|_UID]} ->
-		    ReceiverPID ! {pid, CPID};
-		error ->
-		    ReceiverPID ! {error, not_found}
-	    end,
+	    {ok, CPID} = dict:find(ClientID, Clients),
+	    ReceiverPID ! {pid, CPID},
 	    handler(Clients, Games, BackupPID);
 	{host_game, ReceiverPID, HostPID, GameID} ->
-	    %%{ok, HID} = dict:find(HostPID, Clients),
-	    case dict:find(HostPID, Clients) of
-		{ok, HID} ->
-		    TmpGames = dict:append(GameID, HID, Games),
-		    ReceiverPID ! {ok, hosting_game},
-		    BackupPID ! {update_games, TmpGames},
-		    handler(Clients, TmpGames, BackupPID);
-		error ->
-		    ReceiverPID ! {error, host_not_found},
-		    handler(Clients, Games, BackupPID)
-	    end;
-	{join_game, ReceiverPID, PlayerPID, GameID} ->
-	    %%{ok, PID} = dict:find(PlayerPID, Clients),
-	    case dict:find(PlayerPID, Clients) of
-		{ok, PID} ->
-		    TmpGames = dict:append(GameID, PID, Games),
-		    ReceiverPID ! {ok, joined_game},
+	    {ok, HID} = dict:find(HostPID, Clients),
+	    TmpGames = dict:append(GameID, HID, Games),
+	    ReceiverPID ! {ok, hosting_game},
 
-		    BackupPID ! {update_games, TmpGames},
-		    handler(Clients, TmpGames, BackupPID);
-		error ->
-		    ReceiverPID ! {error, player_not_found},
-		    handler(Clients, Games, BackupPID)
-	    end;
+	    BackupPID ! {update_games, TmpGames},
+	    handler(Clients, TmpGames, BackupPID);
+	{join_game, ReceiverPID, PlayerPID, GameID} ->
+	    {ok, PID} = dict:find(PlayerPID, Clients),
+	    TmpGames = dict:append(GameID, PID, Games),
+	    ReceiverPID ! {ok, joined_game},
+
+	    BackupPID ! {update_games, TmpGames},
+	    handler(Clients, TmpGames, BackupPID);
 	{remove_game, ReceiverPID, GameID} ->
 	    TmpGames = dict:erase(GameID, Games),
 	    ReceiverPID ! {ok, game_removed},
@@ -203,51 +161,25 @@ handler(Clients, Games, BackupPID) ->
 	    BackupPID ! {update_games, TmpGames},
 	    handler(Clients, TmpGames, BackupPID);
 	{get_players_pids, ReceiverPID, GameID} ->
-	    %%{ok, PList} = dict:find(GameID, Games),
-	    case dict:find(GameID, Games) of
-		{ok, PList} ->
-		    SockList = [Cli || {ok, [Cli|_UID]} <- [dict:find(CID, Clients) || CID <- PList] ],
-		    ReceiverPID ! {players, SockList};
-		error ->
-		    ReceiverPID ! {error, game_not_found}
-	    end,
+	    {ok, PList} = dict:find(GameID, Games),
+	    SockList = [Cli || {ok, Cli} <- [dict:find(CID, Clients) || CID <- PList] ],
+	    ReceiverPID ! {players, SockList},
 	    handler(Clients, Games, BackupPID);
 	{get_players_ids, ReceiverPID, GameID} ->
-	    %%{ok, PList} = dict:find(GameID, Games),
-	    case dict:find(GameID, Games) of
-		{ok, PList} ->
-		    ReceiverPID ! {players, PList};
-		error ->
-		    ReceiverPID ! {error, game_not_found}
-	    end,
+	    {ok, PList} = dict:find(GameID, Games),
+
+	    ReceiverPID ! {players, PList},
 	    handler(Clients, Games, BackupPID);
 	{get_players, ReceiverPID, GameID} ->
-	    %%{ok, PList} = dict:find(GameID, Games),
-	    case dict:find(GameID, Games) of
-		{ok, PList} ->
-		    SockList = [{Cli,Cid} || {{ok, [Cli|_UID]}, Cid} <- [{dict:find(CID, Clients),CID} || CID <- PList] ],
-		    %% {Socket, ClientID} %%
-		    ReceiverPID ! {players, SockList};
-		error ->
-		    ReceiverPID ! {error, game_not_found}
-	    end,
+	    {ok, PList} = dict:find(GameID, Games),
+	    SockList = [{Cli,Cid} || {{ok, Cli}, Cid} <- [{dict:find(CID, Clients),CID} || CID <- PList] ],
+	    %% {Socket, ClientID} %%
+	    ReceiverPID ! {players, SockList},
 	    handler(Clients, Games, BackupPID);	    
 	{get_host, ReceiverPID, GameID} ->
-	    %%{ok, [HID|_T]} = dict:find(GameID, Games),
-	    %%{ok, HPID} = dict:find(HID, Clients),
-	    FINDHID = dict:find(GameID, Games),
-	    case FINDHID of
-		{ok, [HID|_T]} ->
-		    FINDHPID = dict:find(HID, Clients),
-		    case FINDHPID of
-			{ok, HPID} ->
-			    ReceiverPID ! {host_is, HID, HPID};
-			error ->
-			    ReceiverPID ! {error, host_not_found}
-		    end;
-		error ->
-		    ReceiverPID ! {error, host_not_found}
-	    end,
+	    {ok, [HID|_T]} = dict:find(GameID, Games),
+	    {ok, HPID} = dict:find(HID, Clients),
+	    ReceiverPID ! {host_is, HID, HPID},
 	    handler(Clients, Games, BackupPID);
 	{backup, NewBackupPID} ->
 	    NewBackupPID ! {update_all, Clients, Games},
@@ -256,32 +188,6 @@ handler(Clients, Games, BackupPID) ->
 	    handler(Clients, Games, NewBackupPID);
 	{receive_backup, NewClients, NewGames} ->
 	    handler(NewClients, NewGames, BackupPID);
-	{reconnect, ReceiverPID, OldSocket, NewSocket, UniqueID} ->
-	     case dict:find(OldSocket, Clients) of
-		 {ok, Alias} ->
-		     case dict:find(Alias, Clients) of
-			 {ok, [_OSock|UID]} ->
-			     case UniqueID == UID of
-				 true ->
-				     %% Ta bort gamla Socket
-				     %% Uppdatera nya socket
-				     %%
-				     TmpFun = (fun(_OldVal) -> [NewSocket|UID] end),		       
-				     TmpClients = dict:erase(OldSocket, Clients),
-				     TmpClients2 = dict:update(Alias, TmpFun, TmpClients),
-				     TmpClients3 = dict:store(NewSocket, Alias, TmpClients2),
-				     ReceiverPID ! reconnected,
-				     handler(TmpClients3, Games, BackupPID);
-				 false ->
-				     ReceiverPID ! {error, wrong_uid}
-			     end,
-			     handler(Clients, Games, BackupPID);
-			 error ->
-			     ReceiverPID ! {error, alias_not_found}
-		     end;
-		 error ->
-		     ReceiverPID ! {error, old_socket_not_found}
-	      end;
 	{exit, Reason} ->
 	    exit(Reason);
 	done ->

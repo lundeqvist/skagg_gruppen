@@ -9,6 +9,7 @@ import java.util.Vector;
 import javax.swing.JList;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.SwingUtilities;
 import utils.*;
 
 /**
@@ -48,6 +49,7 @@ public class OnlineList implements Runnable {
     public void setMainPanel(JPanel mainPanelFromGM) {
         mainPanel = mainPanelFromGM;
     }
+    
     @Override
     public void run() {
         init_content();
@@ -64,7 +66,12 @@ public class OnlineList implements Runnable {
         userVector.clear();
         for(int i=0;i<users.length;i++){
             userVector.addElement(users[i]);
-        }       
+        }
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                  onlineList.updateUI();
+            }
+        });
     }
     
     /**
