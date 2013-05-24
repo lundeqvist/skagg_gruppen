@@ -7,6 +7,7 @@
 -define(TCP_OPTIONS, [binary, {packet, 2}, {active, false}, {reuseaddr, true}]).
 
 -record(server_info, {ip="localhost",port=5555, recvpid}).
+-record(client_info, {uid, alias=none}).
 
 %%-------------------------------------------------------------------------
 %% @spec (Port) -> Port | {error,Error}
@@ -108,7 +109,8 @@ connectAux(ParPID, IP, PortNo, ReceiverPID) ->
 	{ok, Socket} ->
 	    process_flag(trap_exit, true),
 	    ServInfo = #server_info{ip=IP, port=PortNo, recvpid=ReceiverPID},
-	    HandlerPID = spawn_link(fun() -> handler(Socket, ServInfo, 0) end),
+	    CliInfo = #client_info{},
+	    HandlerPID = spawn_link(fun() -> handler(Socket, ServInfo, CliInfo) end),
 	    RPID = spawn_link(fun() -> recv(Socket, HandlerPID, ReceiverPID) end),
 	    ParPID ! {ok, HandlerPID},
 	    restarter(HandlerPID, RPID);
@@ -177,9 +179,13 @@ send(HandlerPID, Message) ->
 %%-------------------------------------------------------------------------
 -spec disconnect(Socket) -> ok when
       Socket::port().
-disconnect(Socket) ->
-    send(Socket, disconnect),
-    io:format("Disconnected from server. ~n", []).
+disconnect(Socket) when is_port(Socket) ->
+    sendS(Socket, disconnect),
+    io:format("Disconnected from server. ~n", []);
+disconnect(Pid) ->
+    send(Pid, disconnect),
+    io:format("Disconnect from server. ~n", []).
+
     %%gen_tcp:close(Socket).
 
 
@@ -231,15 +237,33 @@ recv(Socket, HandlerPID, ReceiverPID) ->
 		{ok, Message} ->
 		    io:format("ok, ~p. ~n", [Message]),
 		    recv(Socket, HandlerPID, ReceiverPID);
-		{uniqueid, UniqueID} ->
-		    io:format("Set uniqueid to ~p ~n", [UniqueID]),
-		    HandlerPID ! {set_uniqueid, UniqueID},
+		{cli_info, UniqueID, Alias} ->
+		    io:format("Set uniqueid to ~p, Alias to ~p ~n", [UniqueID, Alias]),
+		    CliInfo = #client_info{uid = UniqueID, alias = Alias},
+		    HandlerPID ! {set_cli_info, CliInfo},
 		    recv(Socket, HandlerPID, ReceiverPID);
 		reconnected ->
 		    io:format("Reconnected! ~n", []),
 		    recv(Socket, HandlerPID, ReceiverPID);
+		{error, closed} ->
+		    io:format("Closed 2, let's reconnect ~n", []),
+                    %%%%%% reconnect %%%%%%%%%%%%%%%%%%
+		    HandlerPID ! {get_serv_cli_info, self()},
+		    receive
+			{serv_cli_info, ServInfo, CliInfo} ->
+			    NewSocket = simpleConnect(ServInfo, 10),
+			    
+			    sendS(NewSocket, {reconnect, CliInfo#client_info.alias, CliInfo#client_info.uid}),
+
+			    HandlerPID ! {update_socket, NewSocket},
+			    recv(NewSocket, HandlerPID, ReceiverPID);
+			_ ->
+			    exit(noservinfo)
+		    end;		    
+                    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%		    
 		{error, Reason} ->
-		    io:format("Error with reason: ~p ~n", [Reason]);
+		    io:format("Error with reason: ~p ~n", [Reason]),
+		    recv(Socket, HandlerPID, ReceiverPID);
 		disconnect ->
 		    %%io:format("Disconnected from server.", []),
 		    gen_tcp:close(Socket);
@@ -248,22 +272,25 @@ recv(Socket, HandlerPID, ReceiverPID) ->
 		    recv(Socket, HandlerPID, ReceiverPID)
 	    end;
 	{error, closed} ->
-	    %% reconnect
-	    HandlerPID ! {get_serv_info_uid, self()},
+	%%%%%% reconnect %%%%%%%%%%%%%%%%%%
+	    io:format("Closed 2 ~n", []),
+	    HandlerPID ! {get_serv_cli_info, self()},
 	    receive
-		{serv_info_uid, ServInfo, UniqueID} ->
+		{serv_cli_info, ServInfo, CliInfo} ->
 		    NewSocket = simpleConnect(ServInfo, 10),
 		    
-		    sendS(NewSocket, {reconnect, Socket, UniqueID}),
+		    sendS(NewSocket, {reconnect, CliInfo#client_info.alias, CliInfo#client_info.uid}),
 
 		    HandlerPID ! {update_socket, NewSocket},
 		    recv(NewSocket, HandlerPID, ReceiverPID);
 		_ ->
 		    exit(noservinfo)
 	    end;
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	{error, Reason} ->
 	    exit(Reason)
     end.
+
 
 
 restarter(HandlerPID, RecvPID) ->
@@ -293,24 +320,24 @@ restarter(HandlerPID, RecvPID) ->
 
 
 
-handler(Socket, ServInfo, UniqueID) -> 
+handler(Socket, ServInfo, CliInfo) -> 
     receive
 	{get_socket, ReceiverPID} ->
 	    ReceiverPID ! {socket, Socket},
-	    handler(Socket, ServInfo, UniqueID);
+	    handler(Socket, ServInfo, CliInfo);
 	{update_socket, NewSocket} ->
-	    handler(NewSocket, ServInfo, UniqueID);
-	{get_serv_info_uid, ReceiverPID} ->
-	    ReceiverPID ! {serv_info_uid, ServInfo, UniqueID},
-	    handler(Socket, ServInfo, UniqueID);
+	    handler(NewSocket, ServInfo, CliInfo);
+	{get_serv_cli_info, ReceiverPID} ->
+	    ReceiverPID ! {serv_cli_info, ServInfo, CliInfo},
+	    handler(Socket, ServInfo, CliInfo);
 	{get_all, ReceiverPID} ->
 	    ReceiverPID ! {all, Socket, ServInfo},
-	    handler(Socket, ServInfo, UniqueID);
-	{set_uniqueid, NewUniqueID} ->
-	    handler(Socket, ServInfo, NewUniqueID);
-	{get_uniqueid, ReceiverPID} ->
-	    ReceiverPID ! {uniqueid, UniqueID},
-	    handler(Socket, ServInfo, UniqueID);
+	    handler(Socket, ServInfo, CliInfo);
+	{set_cli_info, NewCliInfo} ->
+	    handler(Socket, ServInfo, NewCliInfo);
+	{get_cli_info, ReceiverPID} ->
+	    ReceiverPID ! {cli_info, CliInfo},
+	    handler(Socket, ServInfo, CliInfo);
 	_ ->
 	    exit(unknown_question)
     end.

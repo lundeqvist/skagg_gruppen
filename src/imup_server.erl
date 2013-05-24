@@ -24,8 +24,8 @@
 %% @end
 %%-------------------------------------------------------------------------
 -spec start(Port) -> tuple() when
-      Port::integer().
-start(Port) ->
+      Port::any().
+start(Port) when is_integer(Port) or is_atom(Port) ->
     RPID = self(),
     spawn(fun() -> init(RPID, Port) end),
     receive
@@ -35,7 +35,9 @@ start(Port) ->
 	    exit(Reason);
 	_ ->
 	    exit(unable_to_start_server)
-    end.
+    end;
+start([Port]) ->
+    start(list_to_integer(Port)).
 
     
 init(RPID, Port) ->		  
@@ -117,14 +119,6 @@ restarter(BackupPID, HandlerPID, ListenerPID) ->
 %%%%%%%%%%%%%%%%%%%%%%
 handler(Clients, Games, BackupPID) ->
     receive
-	{exists, ReceiverPID, ClientID} ->
-	    case dict:is_key(ClientID, Clients) of
-		true ->
-		    ReceiverPID ! already_exists;
-		false ->
-		    ReceiverPID ! can_insert
-	    end,
-	    handler(Clients, Games, BackupPID);
 	{insert_client, ReceiverPID, Socket, Alias} ->
 	    case dict:is_key(Alias, Clients) of
 		false ->
@@ -196,6 +190,20 @@ handler(Clients, Games, BackupPID) ->
 		    ReceiverPID ! {error, player_not_found},
 		    handler(Clients, Games, BackupPID)
 	    end;
+	{remove_player, ReceiverPID, GameID, PlayerID} ->
+	    case dict:find(GameID, Games) of
+		{ok, PlayerList} ->
+		    TmpPlayerList = lists:delete(PlayerID, PlayerList),
+		    TmpGames = dict:erase(GameID, Games),
+		    TmpGames2 = dict:append_list(GameID, TmpPlayerList, TmpGames),
+		    ReceiverPID ! {ok, player_removed},
+		    
+		    BackupPID ! {update_games, TmpGames2},
+		    handler(Clients, TmpGames2, BackupPID);
+		error ->
+		    ReceiverPID ! {error, game_not_found},
+		    handler(Clients, Games, BackupPID)
+	    end;	    
 	{remove_game, ReceiverPID, GameID} ->
 	    TmpGames = dict:erase(GameID, Games),
 	    ReceiverPID ! {ok, game_removed},
@@ -256,32 +264,25 @@ handler(Clients, Games, BackupPID) ->
 	    handler(Clients, Games, NewBackupPID);
 	{receive_backup, NewClients, NewGames} ->
 	    handler(NewClients, NewGames, BackupPID);
-	{reconnect, ReceiverPID, OldSocket, NewSocket, UniqueID} ->
-	     case dict:find(OldSocket, Clients) of
-		 {ok, Alias} ->
-		     case dict:find(Alias, Clients) of
-			 {ok, [_OSock|UID]} ->
-			     case UniqueID == UID of
-				 true ->
-				     %% Ta bort gamla Socket
-				     %% Uppdatera nya socket
-				     %%
-				     TmpFun = (fun(_OldVal) -> [NewSocket|UID] end),		       
-				     TmpClients = dict:erase(OldSocket, Clients),
-				     TmpClients2 = dict:update(Alias, TmpFun, TmpClients),
-				     TmpClients3 = dict:store(NewSocket, Alias, TmpClients2),
-				     ReceiverPID ! reconnected,
-				     handler(TmpClients3, Games, BackupPID);
-				 false ->
-				     ReceiverPID ! {error, wrong_uid}
-			     end,
-			     handler(Clients, Games, BackupPID);
-			 error ->
-			     ReceiverPID ! {error, alias_not_found}
-		     end;
-		 error ->
-		     ReceiverPID ! {error, old_socket_not_found}
-	      end;
+	{reconnect, ReceiverPID, NewSocket, Alias, UniqueID} ->
+	    case dict:find(Alias, Clients) of
+		{ok, [OldSocket|UID]} ->
+		    case UniqueID == UID of
+			true ->
+			    TmpFun = (fun(_OldVal) -> [NewSocket|UID] end),
+			    TmpClients = dict:erase(OldSocket, Clients),
+			    TmpClients2 = dict:update(Alias, TmpFun, TmpClients),
+			    TmpClients3 = dict:store(NewSocket, Alias, TmpClients2),
+			    ReceiverPID ! reconnected,
+
+			    BackupPID ! {update_clients, TmpClients3},
+			    handler(TmpClients3, Games, BackupPID);
+			false ->
+			    ok
+		    end;
+		error ->
+		    ReceiverPID ! {error, alias_not_found}
+	    end;			    
 	{exit, Reason} ->
 	    exit(Reason);
 	done ->

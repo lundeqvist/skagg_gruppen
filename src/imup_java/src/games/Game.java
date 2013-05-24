@@ -1,25 +1,18 @@
 package games;
 
-import com.ericsson.otp.erlang.OtpErlangAtom;
-import com.ericsson.otp.erlang.OtpErlangObject;
-import com.ericsson.otp.erlang.OtpErlangTuple;
-import com.ericsson.otp.erlang.OtpMbox;
 import communication.*;
 import java.awt.GridLayout;
 import javax.swing.*;
 import player.*;
-import utils.*;
 
-@SuppressWarnings("serial")
 public abstract class Game extends JFrame implements Runnable {
-    //protected eller private? Vad är bäst måntro?
 
     protected String gameName, gameID;
     protected int gameRows, gameCols, frameWidth, frameHeight;
     protected JButton[][] gameGrid;
     protected JPanel mainPanel;
     protected Player[] players;
-    protected CommunicationWithErlang converter;    
+    protected CommunicationWithErlang converter;
 
     public Game(String name, String id, int rows, int cols, int width, int height) {
         gameName = name;
@@ -58,21 +51,4 @@ public abstract class Game extends JFrame implements Runnable {
     public String getGameID() {
         return this.gameID;
     }
-    /*
-    public static void sendChattMessage(String input, CommunicationWithErlang converter, OtpMbox mailbox, String playerID, String gameID) {
-        if (!input.equals("")) {
-            DateFormat df = DateFormat.getTimeInstance(DateFormat.SHORT);
-            Date date = new Date();
-            String newOutput = " [" + df.format(date) + "]: " + input + "\n";
-            sendMessage(mailbox, converter, gameID, playerID, newOutput);
-        }
-    }
-
-    public static void receiveChattMessage(JTextArea chatOutput, CommunicationWithErlang converter, OtpMbox mailbox, String playerID, String gameID) {
-        Arguments arguments = receiveMessage(mailbox, converter);
-        String[] message = arguments.getArguments();
-        String currentOutput = chatOutput.getText();
-        chatOutput.setText(currentOutput + "\n" + message[3]);
-    }
-    */
 }

@@ -39,22 +39,36 @@ pong(Lists, Socket) ->
 	
 	%%Detta kommer från "servern"
 	{GameID, PlayerID, Message} ->	  
-			io:format("Message received from server: ",[]),
-			io:format(GameID,[]),
+	    io:format("Message received from server from: ",[]),
+	    io:format(GameID,[]),
+	    io:format("~n",[]),
 	    List = [MailBox || {X, MailBox} <- Lists, X =:= {GameID, PlayerID}],
 	    if List =:= [] ->
 		    List1 = [MailBox || {{X,Y}, MailBox} <- Lists, X =:= GameID],
-		    if List1 =:= [] ->			    
+		    if List1 =:= [] ->
+			    io:format("Mailbox dont exists with playerID and gameID~n",[]),
+			    io:format(PlayerID,[]),
+			    io:format("~n",[]),
+			    io:format(GameID,[]),
+			    io:format("~n",[]),
 			    List2 = [MailBox || {{X,Y}, MailBox} <- Lists, X =:= gameMenu],
 			    [A] = List2,
 			    A ! {self(), GameID, PlayerID, Message},
 			    pong(Lists, Socket);
-				true ->
+		       true ->
+			    io:format("Mailbox exists with gameID~n",[]),
+			    io:format(GameID,[]),
+			    io:format("~n",[]),
 			    [A|_] = List1,
 			    A ! {self(), GameID, PlayerID, Message},
 			    pong(Lists, Socket)		
 		    end;
-			true ->
+	       true ->
+		    io:format("Mailbox exists with playerID and gameID~n",[]),
+		    io:format(PlayerID,[]),
+		    io:format("~n",[]),
+		    io:format(GameID,[]),
+		    io:format("~n",[]),
 		    [A] = List,
 		    A ! {self(), GameID, PlayerID, Message},
 		    pong(Lists, Socket)	    
@@ -69,16 +83,35 @@ pong(Lists, Socket) ->
 	
 	{MailBox, GameID, PlayerID, {join_game}} ->
 	    io:format("join game ~n", []),
+	    io:format(PlayerID, []), 
+	    io:format("~n",[]),
 	    imup_client:send(Socket, {join_game, GameID}),
 	    pong(Lists, Socket);
-	
+
+	{MailBox, GameID, PlayerID, {remove_player}} ->
+	    io:format("Remove player~n",[]),
+	    imup_client:send(Socket, {remove_player, GameID, PlayerID}),
+	    io:format("Disconnect~n",[]),
+	    imup_client:send(Socket, {send_all, GameID, {get_data, users}}),
+	    imup_client:send(Socket, disconnect),
+	    exit(normal);
+	    %%pong(Lists, Socket);	
+
+	%%{MailBox, GameID, PlayerID, {disconnect}} ->
+	    %%io:format("Disconnect~n",[]),
+	    %%imup_client:send(Socket, {send_all, GameID, {get_data, users}}),
+	    %%imup_client:send(Socket, disconnect),
+	   %% exit(normal);
+	%%pong(Lists, Socket);
+
+
 	{MailBox, GameID, PlayerID, Message} ->
 	    io:format("Från client med gameID ",[]),
 	    io:format(GameID,[]),
 	    io:format("~n",[]),	    
 	    imup_client:send(Socket,{send_all, GameID, {GameID, PlayerID, Message}}),
 	    pong(Lists, Socket);	
-
+	
 	_ ->
 	    io:format("error~n",[])
     end.

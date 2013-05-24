@@ -1,39 +1,33 @@
 package communication;
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 
-import com.ericsson.otp.erlang.OtpMbox;
 /**
  *
- * @author Tobias
+ * @author Grupp 4
  */
+import com.ericsson.otp.erlang.OtpMbox;
+import games.*;
 import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.AbstractButton;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
-import javax.swing.SwingUtilities;
-import java.io.*;
-import javax.swing.AbstractButton;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import utils.*;
-import games.*;
 
 /**
- * Client creates the opening window where you enter your name and IP sends
- * it to the server and then creates GameMenu
- */ 
+ * Client creates the opening window where you enter your name and IP sends it
+ * to the server and then creates GameMenu
+ */
 public class Client {
 
     OtpMbox mailbox;
@@ -41,20 +35,42 @@ public class Client {
     JTextField userNameTextField;
     JTextField userIpTextField;
     JTextField userPortTextField;
+    String gameID = "client";
+    String playerID;
+    static Boolean isServer = false;
+    JFrame firstGuiFrame;
     JFrame guiFrame;
 
     public Client() {
-        converter = new CommunicationWithErlang(); 
-        //converter.runSnameTerminalStuff();
-        init_GUI();
+        firstGuiFrame = new JFrame();
+        JPanel guiPanel = new JPanel(new GridBagLayout());
+        JLabel userNameLabel = new JLabel("Name:");
+        userNameTextField = new JTextField(20);
+        userNameTextField.setText("Name");
+        JButton startErlang = new JButton("startErlang");
+        startErlang.addActionListener(new ButtonListener());
+        firstGuiFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        firstGuiFrame.setTitle("Client");
+        firstGuiFrame.setSize(500, 200);
+        firstGuiFrame.setLocationRelativeTo(null);
+        GridBagConstraints labelGBC = new GridBagConstraints();
+        labelGBC.insets = new Insets(3, 3, 3, 3);
+        GridBagConstraints fieldGBC = new GridBagConstraints();
+        fieldGBC.insets = new Insets(10, 10, 10, 10);
+        fieldGBC.gridwidth = GridBagConstraints.REMAINDER;
+        guiPanel.add(userNameLabel, labelGBC);
+        guiPanel.add(userNameTextField, fieldGBC);
+        guiPanel.add(startErlang, fieldGBC);//     
+        firstGuiFrame.add(guiPanel, BorderLayout.NORTH);
+        firstGuiFrame.setVisible(true);
     }
-    
+
+    /**
+     *
+     */
     private void init_GUI() {
         guiFrame = new JFrame();
         JPanel guiPanel = new JPanel(new GridBagLayout());
-        JLabel userNameLabel = new JLabel("Namn:");
-        userNameTextField = new JTextField(20);
-        userNameTextField.setText("Name!");
         JLabel userIpLabel = new JLabel("IP:");
         userIpTextField = new JTextField(20);
         userIpTextField.setText("127.0.0.1");
@@ -64,16 +80,14 @@ public class Client {
         JButton connect = new JButton("connect");
         connect.addActionListener(new ButtonListener());
         guiFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        guiFrame.setTitle("Client");
-        guiFrame.setSize(500, 250);
+        guiFrame.setTitle(playerID);
+        guiFrame.setSize(500, 200);
         guiFrame.setLocationRelativeTo(null);
         GridBagConstraints labelGBC = new GridBagConstraints();
         labelGBC.insets = new Insets(3, 3, 3, 3);
         GridBagConstraints fieldGBC = new GridBagConstraints();
         fieldGBC.insets = new Insets(10, 10, 10, 10);
         fieldGBC.gridwidth = GridBagConstraints.REMAINDER;
-        guiPanel.add(userNameLabel, labelGBC);
-        guiPanel.add(userNameTextField, fieldGBC);
         guiPanel.add(userIpLabel, labelGBC);
         guiPanel.add(userIpTextField, fieldGBC);
         guiPanel.add(userPortLabel, labelGBC);
@@ -81,7 +95,6 @@ public class Client {
         guiPanel.add(connect, fieldGBC);
         guiFrame.add(guiPanel, BorderLayout.NORTH);
         guiFrame.setVisible(true);
-        
     }
 
     private class ButtonListener implements ActionListener {
@@ -89,11 +102,16 @@ public class Client {
         @Override
         public void actionPerformed(ActionEvent e) {
             switch (((AbstractButton) e.getSource()).getText()) {
+                case "startErlang":
+                    playerID = userNameTextField.getText();
+                    converter = new CommunicationWithErlang(playerID);
+                    converter.runSnameTerminalStuff();
+                    firstGuiFrame.setVisible(false);
+                    init_GUI();
+                    break;
                 case "connect":
-                    String playerID = userNameTextField.getText();
                     String ipNumber = userIpTextField.getText();
                     String portNumber = userPortTextField.getText();
-                    //Det kanske ska vara nåt annat om det misslyckas med ip???
                     String myIp = null;
                     try {
                         myIp = InetAddress.getLocalHost().toString();
@@ -101,31 +119,17 @@ public class Client {
                         Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
                     }
                     String arguments = "{" + ipNumber + "," + portNumber + "," + myIp + "}";
-                    
-                    mailbox = converter.createMailbox("onlinelist", playerID);      
+                    mailbox = converter.createMailbox("onlinelist", playerID);
                     Utils.sendMessage(mailbox, converter, "onlinelist", playerID, arguments);
                     Arguments users = Utils.receiveMessage(mailbox, converter);
-                    GameMenu gMenu = new GameMenu(mailbox, playerID, ipNumber, portNumber, users.getArguments()); 
-                    guiFrame.dispose();
+                    guiFrame.setVisible(false);
+                    GameMenu gMenu = new GameMenu(mailbox, playerID, ipNumber, portNumber, users.getArguments());
             }
-
         }
-        /*private static String OS = System.getProperty("os.name").toLowerCase();
-         public static boolean isWindows() {
-         return (OS.indexOf("win") >= 0);
-         }
-         public static boolean isMac() {
-         return (OS.indexOf("mac") >= 0);
-         }
-         public static boolean isUnix() {
-         return (OS.indexOf("nix") >= 0 || OS.indexOf("nux") >= 0 || OS.indexOf("aix") > 0);
-         }
-         public static boolean isSolaris() {
-         return (OS.indexOf("sunos") >= 0);
-         }*/
     }
-    public static void main(String[] args) { 
-        
+
+    public static void main(String[] args) {
+        //Hello hello = new Hello();
         Client client = new Client();
     }
 }

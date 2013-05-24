@@ -194,6 +194,7 @@ acceptor(LSocket, ParentPID) ->
 		     %%exit(closed);
 		 {error, Reason} ->
 		     %%exit(Reason)
+		     io:format("An error has occured in acceptor, reason: ~p ~n", [Reason]),
 		     acceptor(LSocket, ParentPID)
 	     end,
     Pid = spawn(fun() ->
@@ -229,8 +230,6 @@ loop(Sock, HandlerPID) ->
     end.
 
 
-
-
 %%%%%%%%%%%%%%%%%%%%%%%%%
 %% Processing Function %%
 %%%%%%%%%%%%%%%%%%%%%%%%%
@@ -241,7 +240,8 @@ loop(Sock, HandlerPID) ->
 process_data(Socket, Data, HandlerPID) when is_binary(Data) ->
     case binary_to_term(Data) of
 	testing ->
-	    gen_tcp:close(Socket);
+	    gen_tcp:close(Socket),
+	    exit(closed_socket);
 	{send_host, GameID, Msg} ->
 	    HandlerPID ! {get_host, self(), GameID},
 	    receive
@@ -331,17 +331,29 @@ process_data(Socket, Data, HandlerPID) when is_binary(Data) ->
 	    HandlerPID ! {insert_client, self(), Socket, SenderID},
 	    receive
 		{inserted, UID} ->
-		    {uniqueid, UID};
+		    {cli_info, UID, SenderID};
 		{error, user_already_exists} ->
 		    {error, user_already_exists};
 		_ ->
 		    {error, not_entered}
 	    end;
-	{reconnect, OldSocket, UniqueID} ->
-	    HandlerPID ! {reconnect, self(), OldSocket, Socket, UniqueID},
+	{remove_player, GameID, PlayerID} ->
+	    HandlerPID ! {remove_player, self(), GameID, PlayerID},
+	    receive
+		{ok, player_removed} ->
+		    {ok, player_removed};
+		{error, game_not_found} ->
+		    {error, game_not_found};
+		_ ->
+		    {error, player_not_removed}
+	    end;
+	{reconnect, Alias, UniqueID} ->
+	    HandlerPID ! {reconnect, self(), Socket, Alias, UniqueID},
 	    receive
 		reconnected ->
 		    reconnected;
+		{error, Reason} ->
+		    {error, Reason};
 		_ ->
 		    {error, not_reconnected}
 	    end;

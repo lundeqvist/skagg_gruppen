@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package games;
 
 import com.ericsson.otp.erlang.OtpMbox;
@@ -21,10 +17,6 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import utils.*;
 
-/**
- *
- * @author Linda
- */
 public class GameMenuChat implements Runnable {
 
     public JTextField chatInput;
@@ -37,12 +29,12 @@ public class GameMenuChat implements Runnable {
     private String playerID;
     private OtpMbox mailbox;
 
-    public GameMenuChat(String playerID){
+    public GameMenuChat(String playerID) {
         this.playerID = playerID;
     }
-    
+
     public void init_content() {
-        converter = new CommunicationWithErlang();
+        converter = new CommunicationWithErlang(playerID);
         chatInput = new JTextField(10);
         chatInput.setBounds(536, 286, 160, 50);
         chatInput.addKeyListener(new WindowListener());
@@ -58,18 +50,9 @@ public class GameMenuChat implements Runnable {
         chatScrollPane.setBounds(536, 10, 250, 266);
         mainPanel.add(chatScrollPane);
         mailbox = converter.createMailbox(gameID, playerID);
-        Utils.sendMessage(mailbox, converter, gameID, playerID, "{join_game}"); 
-        receiveMessage();
-    }
-
-    public void receiveMessage() {
-        while (true) {
-            Arguments arguments = Utils.receiveMessage(mailbox, converter);
-            String[] message = arguments.getArguments();
-            String currentOutput = chatOutput.getText();
-            //System.out.println(message);
-            chatOutput.setText(currentOutput + "\n" + message[0]);
-        }
+        Utils.sendMessage(mailbox, converter, gameID, playerID, "{join_game}");
+        Thread listener = new Thread(new ServerListener());
+        listener.start();
     }
 
     public void setMainPanel(JPanel mainPanelFromGM) {
@@ -81,12 +64,31 @@ public class GameMenuChat implements Runnable {
         init_content();
     }
 
+    private class ServerListener implements Runnable {
+
+        public ServerListener() {}
+
+        private void serverListener() {
+            while (true) {
+                Arguments arguments = Utils.receiveMessage(mailbox, converter);
+                String[] message = arguments.getArguments();
+                String currentOutput = chatOutput.getText();
+                chatOutput.setText(currentOutput + message[0] + "\n");
+            }
+        }
+
+        @Override
+        public void run() {
+            serverListener();
+        }
+    }
+
     private class ButtonListener implements ActionListener {
 
         @Override
         public void actionPerformed(ActionEvent e) {
             switch (((AbstractButton) e.getSource()).getText()) {
-                case "Send":                    
+                case "Send":
                     DateFormat df = DateFormat.getTimeInstance(DateFormat.SHORT);
                     Date date = new Date();
                     String input = chatInput.getText();
@@ -102,9 +104,9 @@ public class GameMenuChat implements Runnable {
     }
 
     private class WindowListener implements KeyListener {
+
         @Override
         public void keyPressed(KeyEvent e) {
-            // TODO Auto-generated method stub
             switch (e.getKeyCode()) {
                 case KeyEvent.VK_ENTER:
                     DateFormat df = DateFormat.getTimeInstance(DateFormat.SHORT);
@@ -115,19 +117,14 @@ public class GameMenuChat implements Runnable {
                     chatInput.setText("");
                     break;
                 default:
-
                     break;
             }
         }
 
         @Override
-        public void keyReleased(KeyEvent arg0) {
-            // TODO Auto-generated method stub
-        }
+        public void keyReleased(KeyEvent arg0) {}
 
         @Override
-        public void keyTyped(KeyEvent arg0) {
-            // TODO Auto-generated method stub
-        }
+        public void keyTyped(KeyEvent arg0) {}
     }
 }
