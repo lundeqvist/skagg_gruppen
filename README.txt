@@ -23,7 +23,7 @@ Add a short description of your project here.
 
 ==== GROUP MEMBERS ==== 
 
-910702-2775 elias.lundeqvist.4550@student.uu.se
+YYMMDD-XXXX elias.lundeqvist.4550@student.uu.se
 YYMMDD-XXXX Firstname.Lastname.1234@student.uu.se
 YYMMDD-XXXX Firstname.Lastname.1234@student.uu.se
 YYMMDD-XXXX Firstname.Lastname.1234@student.uu.se
